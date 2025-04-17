@@ -1,0 +1,101 @@
+/* Doctor Form - Custom Styling */
+
+/* Image uploader styling */
+.doctor-avatar-uploader {
+    display: inline-block !important;
+    margin: 0 auto;
+}
+
+.doctor-avatar-uploader .ant-upload.ant-upload-select-picture-card {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #e6e6e6;
+    transition: all 0.3s;
+    background: #f9fafb;
+}
+
+.doctor-avatar-uploader .ant-upload.ant-upload-select-picture-card:hover {
+    border-color: #4096ff;
+    box-shadow: 0 0 0 3px rgba(64, 150, 255, 0.1);
+}
+
+.doctor-avatar-uploader img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Form field styling */
+.ant-form-item-label > label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.ant-input-affix-wrapper:hover,
+.ant-input:hover,
+.ant-picker:hover,
+.ant-select-selector:hover {
+    border-color: #4096ff !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input:focus,
+.ant-input-focused,
+.ant-picker-focused,
+.ant-select-focused .ant-select-selector {
+    border-color: #4096ff !important;
+    box-shadow: 0 0 0 2px rgba(64, 150, 255, 0.2) !important;
+}
+
+/* Button styling */
+.ant-btn-primary {
+    background: linear-gradient(to right, #4096ff, #1677ff);
+    border: none;
+    transition: all 0.3s;
+}
+
+.ant-btn-primary:hover {
+    background: linear-gradient(to right, #1677ff, #0958d9);
+    transform: translateY(-1px);
+}
+
+/* Card styling */
+.ant-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.ant-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Section header styling */
+.section-header {
+    position: relative;
+}
+
+.section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(to right, #4096ff, #1677ff);
+    border-radius: 3px;
+}
+
+/* Simple pulse animation on hover */
+@keyframes subtle-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+.doctor-avatar-uploader .ant-upload.ant-upload-select-picture-card:hover {
+    animation: subtle-pulse 1.5s infinite;
+}

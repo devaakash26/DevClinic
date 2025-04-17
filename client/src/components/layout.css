@@ -1,0 +1,306 @@
+/* Layout CSS for DevClinic */
+
+/* Fix z-index issues with sidebar and content */
+.sidebar-fixed {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  z-index: 40;
+  width: 260px;
+  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Desktop sidebar */
+@media (min-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 20;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Top padding for the flex container to account for navbar */
+.flex-1.flex {
+  padding-top: 60px; /* Adjust this value based on your navbar height */
+}
+
+/* Ensure main content doesn't overlap with sidebar */
+@media (min-width: 1024px) {
+  .content-with-sidebar {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+  }
+}
+
+/* Custom transitions for sidebar */
+.sidebar-transition {
+  transition: all 300ms ease-in-out;
+}
+
+/* Fix navbar positioning */
+.navbar-fixed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 1024px) {
+  .navbar-fixed {
+    left: 260px;
+    width: calc(100% - 260px);
+  }
+}
+
+/* Fix potential logo/brand name visibility issues */
+.brand-visible {
+  position: relative;
+  z-index: 20;
+}
+
+/* Mobile sidebar states */
+.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+/* Pulse animation for notifications */
+.pulse-animation {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Bell icon notification animations */
+@keyframes bell-blink {
+  0% { color: currentColor; transform: scale(1); }
+  25% { color: #3b82f6; transform: scale(1.15); }
+  50% { color: currentColor; transform: scale(1); }
+  75% { color: #3b82f6; transform: scale(1.15); }
+  100% { color: currentColor; transform: scale(1); }
+}
+
+.bell-blink-animation {
+  animation: bell-blink 1s ease-in-out;
+}
+
+.notification-bell-icon {
+  cursor: pointer;
+  position: relative;
+}
+
+/* Animation for dropdown fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Override any conflicting z-index values */
+.sidebar {
+  z-index: 40 !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+.header {
+  z-index: 50 !important;
+}
+
+.main-content {
+  position: relative;
+  z-index: 5;
+  overflow-x: hidden;
+}
+
+/* Fix for mobile sidebar positioning */
+@media (max-width: 1023px) {
+  .content-with-sidebar {
+    width: 100%;
+    padding: 0 0.75rem;
+  }
+  
+  .main-content {
+    padding-top: 60px;
+  }
+}
+
+/* Better spacing for content */
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Fix for content shifting on large screens */
+@media (min-width: 1024px) {
+  .navbar-fixed {
+    left: 260px;
+    width: calc(100% - 260px);
+  }
+}
+
+/* Mobile Menu Animation */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.mobile-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  width: 260px;
+  background-color: #1f2937;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease-in-out;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-sidebar.open {
+  transform: translateX(0);
+  animation: slideIn 0.25s ease-in-out;
+}
+
+/* Logo animations and effects */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.w-10.h-10, .w-9.h-9, .w-8.h-8 {
+  background-size: 200% 200%;
+  animation: gradientShift 5s ease infinite;
+  transition: all 0.3s ease;
+}
+
+.w-10.h-10:hover, .w-9.h-9:hover, .w-8.h-8:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* Animate the underline gradient */
+.h-0.5.w-full {
+  transition: width 0.3s ease;
+  animation: expandWidth 0.5s ease-out forwards;
+}
+
+@keyframes expandWidth {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Improved touch targets for mobile */
+@media (max-width: 768px) {
+  .flex.items-center button,
+  .flex.items-center a {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Increased touch target spacing for sidebar menu items */
+  .sidebar ul li a {
+    padding: 12px 16px;
+    margin-bottom: 4px;
+  }
+  
+  /* Better tap targets for header buttons */
+  .header button {
+    padding: 8px;
+  }
+}
+
+/* Improved overlay when sidebar is open on mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Responsive typography fixes */
+@media (max-width: 640px) {
+  h1, h2, h3 {
+    word-break: break-word;
+  }
+  
+  .content-container {
+    padding: 16px;
+  }
+}
+
+/* Enhanced animations for buttons and interactive elements */
+button, a {
+  transition: all 0.3s ease;
+}
+
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fix for header elements to ensure they appear above sidebar */
+.header .flex.items-center button,
+.header .flex.items-center a {
+  position: relative;
+  z-index: 50;
+}
+
+/* Mobile sidebar header styling */
+.mobile-sidebar .flex.justify-between {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Fixes for menu toggle button */
+button[aria-label="Open menu"],
+button[aria-label="Close menu"] {
+  position: relative;
+  z-index: 60 !important;
+}

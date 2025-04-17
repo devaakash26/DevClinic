@@ -1,0 +1,235 @@
+/* Modern notification styles with Tailwind compatibility */
+
+.notification-container {
+  @apply p-6 my-4 max-w-6xl mx-auto;
+}
+
+.notification-header {
+  @apply pb-4 border-b border-gray-200;
+}
+
+.notification-title-icon {
+  @apply flex items-center justify-center h-10 w-10 bg-blue-100 text-blue-600 rounded-full mr-3 text-xl;
+}
+
+.connection-status {
+  @apply text-sm;
+}
+
+.status-badge {
+  @apply flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.status-badge.online {
+  @apply bg-green-100 text-green-700;
+}
+
+.status-badge.offline {
+  @apply bg-red-100 text-red-700;
+}
+
+.status-dot {
+  @apply w-2 h-2 rounded-full mr-2;
+}
+
+.status-badge.online .status-dot {
+  @apply bg-green-500;
+  animation: pulse-animation 2s infinite;
+}
+
+.status-badge.offline .status-dot {
+  @apply bg-red-500;
+}
+
+@keyframes pulse-animation {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
+}
+
+.refresh-button {
+  @apply p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400;
+}
+
+.refresh-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.notification-filters {
+  @apply pt-4;
+}
+
+.search-box {
+  @apply relative flex-1 mr-2;
+}
+
+.search-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+}
+
+.search-input {
+  @apply w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder-gray-400 text-sm;
+}
+
+.filter-select {
+  @apply px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm bg-white;
+}
+
+.action-button {
+  @apply p-2 rounded-full focus:outline-none focus:ring-2 transition-all duration-200;
+}
+
+.seen-button {
+  @apply bg-blue-100 text-blue-600 hover:bg-blue-200 focus:ring-blue-400;
+}
+
+.seen-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.delete-button {
+  @apply bg-red-100 text-red-600 hover:bg-red-200 focus:ring-red-400;
+}
+
+.delete-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.notification-content {
+  @apply pt-4;
+}
+
+.custom-tabs .ant-tabs-nav {
+  @apply mb-4;
+}
+
+.tab-item {
+  @apply flex items-center;
+}
+
+.badge-custom {
+  @apply flex items-center justify-center min-w-[20px] h-5 text-xs font-medium;
+}
+
+.empty-state {
+  @apply py-10 flex flex-col items-center justify-center;
+}
+
+.empty-bell {
+  @apply w-16 h-16 opacity-60;
+}
+
+.empty-text {
+  @apply text-gray-500 mt-2;
+}
+
+.notification-list {
+  @apply space-y-4;
+}
+
+.notification-item {
+  @apply p-4 rounded-lg border-l-4 transition-all duration-200 bg-white shadow-sm hover:shadow-md;
+}
+
+.notification-item.default {
+  @apply border-blue-500 hover:border-blue-600;
+}
+
+.notification-item.appointment {
+  @apply border-purple-500 hover:border-purple-600 bg-purple-50 hover:bg-purple-100;
+}
+
+.notification-item.info {
+  @apply border-blue-500 hover:border-blue-600 bg-blue-50 hover:bg-blue-100;
+}
+
+.notification-item.success {
+  @apply border-green-500 hover:border-green-600 bg-green-50 hover:bg-green-100;
+}
+
+.notification-item.warning {
+  @apply border-yellow-500 hover:border-yellow-600 bg-yellow-50 hover:bg-yellow-100;
+}
+
+.notification-item.seen {
+  @apply border-gray-300 hover:border-gray-400 bg-gray-50;
+}
+
+.notification-content-wrapper {
+  @apply flex;
+}
+
+.notification-icon-wrapper {
+  @apply mr-4 mt-1;
+}
+
+.notification-icon {
+  @apply text-xl;
+}
+
+.notification-icon.appointment {
+  @apply text-purple-500;
+}
+
+.notification-icon.info {
+  @apply text-blue-500;
+}
+
+.notification-icon.success {
+  @apply text-green-500;
+}
+
+.notification-icon.warning {
+  @apply text-yellow-500;
+}
+
+.notification-icon.default {
+  @apply text-blue-500;
+}
+
+.notification-details {
+  @apply flex-1;
+}
+
+.notification-message {
+  @apply text-gray-800 text-sm font-medium mb-2;
+}
+
+.notification-meta {
+  @apply flex justify-between items-center text-xs text-gray-500;
+}
+
+.notification-time {
+  @apply flex items-center;
+}
+
+.inline-icon {
+  @apply mr-1;
+}
+
+.mark-seen-btn {
+  @apply text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors duration-200;
+}
+
+.notification-loading {
+  @apply flex flex-col items-center justify-center min-h-[400px] bg-white rounded-lg p-8;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
