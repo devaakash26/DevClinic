@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "concurrently": "^9.1.2"
-  },
-  "dependencies": {
-    "recharts": "^2.15.2"
-  }
-}
