@@ -39,9 +39,16 @@ app.use(cors(corsOptions));
     // Create HTTP server
     const server = http.createServer(app);
 
-    // Initialize Socket.io
+    // Initialize Socket.io with Vercel-compatible settings
     const io = new Server(server, {
-      cors: corsOptions
+      cors: corsOptions,
+      transports: ['websocket', 'polling'],
+      allowEIO3: true,
+      path: '/socket.io/',
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      cookie: false,
+      serveClient: false
     });
 
     // Store active users

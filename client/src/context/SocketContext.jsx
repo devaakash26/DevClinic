@@ -33,7 +33,12 @@ export const SocketProvider = ({ children }) => {
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             timeout: 20000,
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            path: '/socket.io/',
+            withCredentials: true,
+            forceNew: true,
+            autoConnect: true,
+            reconnection: true
         });
         
         setSocket(newSocket);

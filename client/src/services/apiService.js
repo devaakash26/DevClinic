@@ -18,7 +18,7 @@ export const getApiUrl = (endpoint) => {
   return `${API_BASE_URL}/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}`;
 };
 
-// Socket URL
+// Socket URL - don't include the path as it's specified in the Socket.IO options
 export const SOCKET_URL = SERVER_URL;
 
 export default {
