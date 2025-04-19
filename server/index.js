@@ -13,15 +13,10 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const cors = require("cors");
+const corsOptions = require('./cors-config');
 const PORT = process.env.PORT || 4000;
-const option = {
-    origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.CLIENT_URL, "https://developer-clinic.vercel.app"] 
-        : "http://localhost:5173",
-    methods: "GET, POST, PUT, DELETE, PATCH, HEAD",
-    credentials: true
-}
-app.use(cors(option));
+
+app.use(cors(corsOptions));
 
 DbConnect()
 app.use(express.json({ limit: '50mb' }));
@@ -40,12 +35,7 @@ const server = http.createServer(app);
 
 // Initialize Socket.io
 const io = new Server(server, {
-    cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? [process.env.CLIENT_URL, "https://developer-clinic.vercel.app"] 
-            : "http://localhost:5173",
-        methods: ["GET", "POST"]
-    }
+    cors: corsOptions
 });
 
 // Store active users
