@@ -55,26 +55,26 @@ app.all('/api/request-debug', (req, res) => {
   });
 });
 
-// Register Routes with DB connection in middleware
-app.use('/api/user', async (req, res, next) => {
-  await dbConnect();
-  next();
-}, require('./routes/userRoutes'), require('./routes/userRoute'));
+// Middleware to ensure MongoDB is connected per request
+const withDb = (handler) => [
+  async (req, res, next) => {
+    try {
+      await dbConnect();
+      next();
+    } catch (err) {
+      console.error("DB Connection Error:", err);
+      res.status(500).json({ error: "Database connection failed" });
+    }
+  },
+  handler
+];
 
-app.use('/api/admin', async (req, res, next) => {
-  await dbConnect();
-  next();
-}, require('./routes/adminRoute'));
-
-app.use('/api/doctor', async (req, res, next) => {
-  await dbConnect();
-  next();
-}, require('./routes/doctorRoute'));
-
-app.use('/api/support', async (req, res, next) => {
-  await dbConnect();
-  next();
-}, require('./routes/supportRoute'));
+// Register Routes
+app.use('/api/user', ...withDb(require('./routes/userRoutes')));
+app.use('/api/user', ...withDb(require('./routes/userRoute')));
+app.use('/api/admin', ...withDb(require('./routes/adminRoute')));
+app.use('/api/doctor', ...withDb(require('./routes/doctorRoute')));
+app.use('/api/support', ...withDb(require('./routes/supportRoute')));
 
 // Catch-all route
 app.use('*', (req, res) => {
@@ -90,7 +90,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Dev server (only runs locally)
+// Local Dev Mode
 if (process.env.NODE_ENV !== 'production') {
   const http = require("http");
   const { Server } = require("socket.io");
@@ -109,5 +109,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// ✅ Export the serverless handler
+// ✅ Export the serverless handler for Vercel
 module.exports = serverless(app);
