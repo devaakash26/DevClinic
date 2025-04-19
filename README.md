@@ -126,55 +126,158 @@ DevClinic/
   - Option to share feedback as public testimonial
   - Doctors can view their ratings and feedback
 
-## Email System Implementation
+## Email Notification System
 
-### Email Templates
-- **Location**: `server/utils/emailTemplates.js`
-- **Templates Include**:
-  - Email verification
-  - Password reset
-  - Welcome email (sent on first login)
-  - Appointment notifications (request, approval, rejection, completion)
-  - Doctor account status notifications
-  - Doctor unavailability notifications
-  - Medical record sharing
+The DevClinic platform features a comprehensive email notification system that keeps users informed about all platform activities. Every significant action triggers an appropriate email notification, ensuring users stay updated regardless of whether they're actively using the application.
 
-### Welcome Email Implementation
+### Email Infrastructure
 
-A welcome email has been implemented to send personalized greetings to new users when they log in for the first time. This email is sent once per user and includes instructions about using the platform, signed by "Aakash - CEO & Founder".
-
-#### Database Schema Updates
-- **Location**: `server/models/user.js`
-- **Changes**: Added `welcomeEmailSent` boolean field to the User schema to track if a welcome email has been sent
-```javascript
-welcomeEmailSent: {
-    type: Boolean,
-    default: false
-}
-```
-
-#### Welcome Email Template
-- **Location**: `server/utils/emailTemplates.js`
-- **Function**: `welcomeEmailTemplate(userName)`
-- **Design Features**:
-  - Personalized greeting with the user's name
-  - Beautifully styled sections with a gradient header
-  - Feature grid showcasing key platform capabilities
-  - Step-by-step getting started instructions
-  - CEO signature ("Aakash - CEO & Founder")
-  - Responsive design for various devices and email clients
-
-#### Integration Points
-- **Regular Login**: Updated in `server/routes/userRoutes.js` 
-- **Google Sign-In**: Also updated in `server/routes/userRoutes.js`
-
-### Email Sending Infrastructure
 - **Location**: `server/utils/emailService.js`
+- **Template Management**: `server/utils/emailTemplates.js`
 - **Features**:
   - Configurable SMTP settings via environment variables
   - Support for various email services (Gmail, Mailtrap, etc.)
   - Error handling with retries for failed emails
   - Logging for debugging purposes
+  - Responsive HTML email templates with consistent branding
+
+### Account Management Emails
+
+#### 1. Email Verification
+- **Function**: `getEmailVerificationTemplate`, `sendVerificationEmail`
+- **Trigger**: New user registration
+- **Content**: Verification link with 24-hour expiration
+- **Implementation**:
+  ```javascript
+  // Send verification email
+  await sendVerificationEmail(newUser.email, newUser.name, verificationToken);
+  ```
+
+#### 2. Password Reset
+- **Function**: `getPasswordResetTemplate`, `sendPasswordResetEmail`
+- **Trigger**: User requests password reset
+- **Content**: Secure reset link with 1-hour expiration and security tips
+- **Implementation**:
+  ```javascript
+  // Send password reset email
+  await sendPasswordResetEmail(user.email, user.name, resetToken);
+  ```
+
+#### 3. Welcome Email
+- **Function**: `welcomeEmailTemplate`, `sendWelcomeEmail`
+- **Trigger**: First login after account verification
+- **Content**: Platform introduction, feature highlights, getting started guide
+- **Database Tracking**: Uses `welcomeEmailSent` boolean flag in user model
+- **Implementation**:
+  ```javascript
+  // Check if welcome email should be sent
+  if (!user.welcomeEmailSent) {
+      await sendWelcomeEmail(user.email, user.name);
+      user.welcomeEmailSent = true;
+      await user.save();
+  }
+  ```
+
+### Appointment Notification Emails
+
+#### 1. Appointment Request
+- **Functions**:
+  - `appointmentRequestedPatientTemplate`, `sendAppointmentRequestedPatientEmail` (to patient)
+  - `appointmentRequestedDoctorTemplate`, `sendAppointmentRequestedDoctorEmail` (to doctor)
+- **Trigger**: Patient books new appointment
+- **Content**: Appointment details, reason for visit, requested time
+- **Implementation**:
+  ```javascript
+  // Send notification to patient
+  await sendAppointmentRequestedPatientEmail(patient.email, patient.name, appointmentDetails);
+  
+  // Notify doctor about new request
+  await sendAppointmentRequestedDoctorEmail(doctor.email, doctor.name, patient.name, appointmentDetails);
+  ```
+
+#### 2. Appointment Approval
+- **Function**: `appointmentApprovedTemplate`, `sendAppointmentApprovedEmail`
+- **Trigger**: Doctor approves appointment request
+- **Content**: Confirmation details, appointment ID, preparation instructions
+- **Implementation**:
+  ```javascript
+  await sendAppointmentApprovedEmail(patient.email, patient.name, appointment._id, appointmentDetails);
+  ```
+
+#### 3. Appointment Rejection
+- **Function**: `appointmentRejectedTemplate`, `sendAppointmentRejectedEmail`
+- **Trigger**: Doctor rejects appointment request
+- **Content**: Rejection reason, alternative suggestions
+- **Implementation**:
+  ```javascript
+  await sendAppointmentRejectedEmail(patient.email, patient.name, appointmentDetails, rejectionReason);
+  ```
+
+#### 4. Appointment Completion
+- **Function**: `appointmentCompletedTemplate`, `sendAppointmentCompletedEmail`
+- **Trigger**: Doctor marks appointment as completed
+- **Content**: Thank you message, feedback request, follow-up information
+- **Implementation**:
+  ```javascript
+  await sendAppointmentCompletedEmail(patient.email, patient.name, appointmentDetails);
+  ```
+
+### Doctor-specific Emails
+
+#### 1. Doctor Account Approval
+- **Function**: `doctorAccountApprovedTemplate`, `sendDoctorAccountApprovedEmail`
+- **Trigger**: Admin approves doctor application
+- **Content**: Congratulations, dashboard access instructions, feature overview
+- **Implementation**:
+  ```javascript
+  await sendDoctorAccountApprovedEmail(doctor.email, `${doctor.firstname} ${doctor.lastname}`);
+  ```
+
+#### 2. Doctor Account Rejection
+- **Function**: `doctorAccountRejectedTemplate`, `sendDoctorAccountRejectedEmail`
+- **Trigger**: Admin rejects doctor application
+- **Content**: Rejection reason, reapplication instructions, support contact
+- **Implementation**:
+  ```javascript
+  await sendDoctorAccountRejectedEmail(doctor.email, `${doctor.firstname} ${doctor.lastname}`, rejectionReason);
+  ```
+
+#### 3. Doctor Unavailability Notifications
+- **Functions**:
+  - `doctorUnavailableAdminTemplate`, `sendDoctorUnavailableEmailToAdmin` (to admin)
+  - `doctorUnavailableConfirmationTemplate`, `sendDoctorUnavailableConfirmationEmail` (to doctor)
+- **Trigger**: Doctor marks themselves as unavailable
+- **Content**: Unavailability period, reason, impact on appointments
+- **Implementation**:
+  ```javascript
+  // Notify admin
+  await sendDoctorUnavailableEmailToAdmin(adminEmails, doctorName, unavailableReason, unavailableDateFormatted);
+  
+  // Confirm to doctor
+  await sendDoctorUnavailableConfirmationEmail(doctor.email, doctorName, unavailableReason, unavailableDateFormatted);
+  ```
+
+### Medical Record Emails
+
+#### Medical Record Sharing
+- **Function**: `medicalRecordEmailTemplate`, `sendMedicalRecordToPatientEmail`
+- **Trigger**: Doctor shares medical record with patient
+- **Content**: Record details, secure access link, contextual information
+- **Implementation**:
+  ```javascript
+  await sendMedicalRecordToPatientEmail(patient.email, patient.name, medicalRecord, doctorName);
+  ```
+
+### Email Template Design
+
+All email templates follow a consistent design pattern:
+- Responsive HTML layout (works on mobile and desktop)
+- DevClinic branding with gradient header
+- Clear, action-oriented content
+- Contextual styling (success messages in green, warnings in orange/red)
+- Call-to-action buttons for required user actions
+- Fallback text links for accessibility
+- Footer with copyright information and additional help resources
 
 ## Database Models
 
