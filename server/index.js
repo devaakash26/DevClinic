@@ -200,10 +200,30 @@ app.use(cors(corsOptions));
 
     // Health check endpoint
     app.get('/api/health', (req, res) => {
+      // Check MongoDB connection state
+      // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+      const mongoStatus = mongoose.connection.readyState;
+      const mongoStatusText = {
+        0: 'Disconnected',
+        1: 'Connected',
+        2: 'Connecting',
+        3: 'Disconnecting',
+      }[mongoStatus] || 'Unknown';
+      
+      // Get connected MongoDB database name if available
+      const dbName = mongoose.connection.db ? mongoose.connection.db.databaseName : 'Not connected';
+      
       res.status(200).json({ 
         status: 'OK',
         message: 'Server is healthy',
-        dbConnected: mongoose.connection.readyState === 1
+        database: {
+          status: mongoStatus,
+          statusText: mongoStatusText,
+          database: dbName,
+          url: process.env.URI ? process.env.URI.split('@')[1].split('/')[0] : 'N/A', // Safe portion of the connection string
+        },
+        environment: process.env.NODE_ENV,
+        timestamp: new Date().toISOString()
       });
     });
 

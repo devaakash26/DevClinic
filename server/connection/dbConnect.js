@@ -20,21 +20,35 @@ const dbConnect = async () => {
             useUnifiedTopology: true,
             connectTimeoutMS: 30000,
             socketTimeoutMS: 30000,
-            serverSelectionTimeoutMS: 30000,
-            ssl: true,
-            sslValidate: true,
-            retryWrites: true,
-            w: "majority"
+            serverSelectionTimeoutMS: 30000
         };
 
-        console.log("Connecting to database...");
-        cached.promise = mongoose.connect(process.env.URI, opts)
+        // MongoDB connection with retry logic
+        const connectWithRetry = async (retries = 5, interval = 5000) => {
+            try {
+                console.log(`Connecting to MongoDB... (Attempt ${6 - retries})`);
+                return await mongoose.connect(process.env.URI, opts);
+            } catch (error) {
+                console.error("MongoDB Connection Error:", error.message);
+                
+                if (retries <= 1) {
+                    console.error("Maximum connection attempts reached. Giving up.");
+                    throw error;
+                }
+                
+                console.log(`Retrying in ${interval/1000} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, interval));
+                return connectWithRetry(retries - 1, interval);
+            }
+        };
+
+        cached.promise = connectWithRetry()
             .then(mongoose => {
                 console.log("Database Successfully Connected");
                 return mongoose;
             })
             .catch(error => {
-                console.error("Database Connection Error:", error);
+                console.error("Database Connection Failed:", error.message);
                 cached.promise = null;
                 throw error;
             });
