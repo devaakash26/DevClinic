@@ -2,11 +2,13 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const express = require("express");
-const app = express();
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const serverless = require('serverless-http');
 const corsOptions = require('./cors-config');
+const dbConnect = require("./connection/dbConnect");
+
+const app = express();
 
 // Middlewares
 app.use(cors(corsOptions));
@@ -53,29 +55,26 @@ app.all('/api/request-debug', (req, res) => {
   });
 });
 
-// --- Load DB + Routes at cold start ---
-const dbConnect = require("./connection/dbConnect");
-const authUser = require("./routes/userRoutes");
-const userFeedbackRoutes = require("./routes/userRoute");
-const adminRoute = require("./routes/adminRoute");
-const doctorRoute = require("./routes/doctorRoute");
-const supportRoute = require("./routes/supportRoute");
+// Register Routes with DB connection in middleware
+app.use('/api/user', async (req, res, next) => {
+  await dbConnect();
+  next();
+}, require('./routes/userRoutes'), require('./routes/userRoute'));
 
-(async () => {
-  try {
-    await dbConnect();
-    console.log("✅ MongoDB connected");
-  } catch (err) {
-    console.error("❌ DB connection failed", err.message);
-  }
-})();
+app.use('/api/admin', async (req, res, next) => {
+  await dbConnect();
+  next();
+}, require('./routes/adminRoute'));
 
-// Register all routes
-app.use('/api/user', authUser);
-app.use('/api/user', userFeedbackRoutes);
-app.use('/api/admin', adminRoute);
-app.use('/api/doctor', doctorRoute);
-app.use('/api/support', supportRoute);
+app.use('/api/doctor', async (req, res, next) => {
+  await dbConnect();
+  next();
+}, require('./routes/doctorRoute'));
+
+app.use('/api/support', async (req, res, next) => {
+  await dbConnect();
+  next();
+}, require('./routes/supportRoute'));
 
 // Catch-all route
 app.use('*', (req, res) => {
@@ -91,7 +90,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Dev server
+// Dev server (only runs locally)
 if (process.env.NODE_ENV !== 'production') {
   const http = require("http");
   const { Server } = require("socket.io");
@@ -110,4 +109,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// ✅ Export the serverless handler
 module.exports = serverless(app);
