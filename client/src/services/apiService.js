@@ -26,9 +26,44 @@ console.log("API Base URL:", API_BASE_URL);
 console.log("Server URL:", SERVER_URL);
 console.log("Socket URL:", SOCKET_URL);
 
+// Create a custom fetch with retry logic
+export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
+  let retries = 0;
+  let lastError;
+
+  while (retries < maxRetries) {
+    try {
+      console.log(`Fetching ${url} (Attempt ${retries + 1}/${maxRetries})`);
+      const response = await fetch(url, options);
+      
+      // Handle 404 errors by retrying
+      if (response.status === 404) {
+        console.warn(`Received 404 for ${url}, retrying...`);
+        retries++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Fetch error (Attempt ${retries + 1}/${maxRetries}):`, error);
+      lastError = error;
+      retries++;
+      
+      if (retries < maxRetries) {
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+      }
+    }
+  }
+  
+  throw lastError || new Error(`Failed to fetch ${url} after ${maxRetries} attempts`);
+};
+
 export default {
   API_BASE_URL,
   SERVER_URL,
   SOCKET_URL,
-  getApiUrl
+  getApiUrl,
+  fetchWithRetry
 }; 

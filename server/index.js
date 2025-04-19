@@ -12,6 +12,7 @@ const supportRoute = require("./routes/supportRoute");
 const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
+const serverless = require('serverless-http');
 
 const cors = require("cors");
 const corsOptions = require('./cors-config');
@@ -27,8 +28,19 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 // Create HTTP server
 const server = http.createServer(app);
 
-// Connect to database before setting up routes
-(async () => {
+// Quick test route for serverless
+app.get('/api/test', (req, res) => {
+  res.status(200).json({ 
+    message: 'API is working!', 
+    env: process.env.NODE_ENV,
+    time: new Date().toISOString()
+  });
+});
+
+// Connect to database and set up routes
+let io;
+
+const setupServer = async () => {
   try {
     console.log("Attempting to connect to database...");
     await DbConnect();
@@ -64,7 +76,7 @@ const server = http.createServer(app);
     });
     
     // Initialize Socket.io with Vercel-compatible settings
-    const io = new Server(server, {
+    io = new Server(server, {
       cors: corsOptions,
       transports: ['websocket', 'polling'],
       allowEIO3: true,
@@ -194,8 +206,10 @@ const server = http.createServer(app);
 
     // Debug log for active connections every 5 minutes
     setInterval(() => {
-      console.log(`Active users: ${activeUsers.size}`);
-      console.log("Active user IDs:", Array.from(activeUsers.keys()));
+      if (io) {
+        console.log(`Active users: ${activeUsers?.size || 0}`);
+        console.log("Active user IDs:", Array.from(activeUsers?.keys() || []));
+      }
     }, 300000);
 
     // Make io accessible to routes
@@ -311,21 +325,115 @@ const server = http.createServer(app);
       `);
     });
 
-    // Use server.listen instead of app.listen
-    server.listen(PORT, () => {
-      console.log(`Server is running at ${PORT}`);
+    // Debug route to test authentication
+    app.get('/api/auth-test', (req, res) => {
+      const authHeader = req.headers.authorization;
+      res.status(200).json({
+        authHeader: authHeader ? 'Present' : 'Missing',
+        authType: authHeader ? authHeader.split(' ')[0] : 'None',
+        message: 'Auth header debug information'
+      });
+    });
+
+    // Debug route to check the actual request
+    app.all('/api/request-debug', (req, res) => {
+      res.status(200).json({
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        query: req.query,
+        body: req.body,
+        params: req.params,
+        timestamp: new Date().toISOString()
+      });
+    });
+
+    // Google Auth Debug route
+    app.get('/api/auth/google/callback', (req, res) => {
+      console.log('Google Auth Callback Debug:', {
+        query: req.query,
+        headers: req.headers,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.status(200).json({
+        message: 'Google Auth Callback Debug',
+        query: req.query,
+        time: new Date().toISOString()
+      });
+    });
+
+    // Catch-all route for unhandled routes to prevent 404s
+    app.use('*', (req, res) => {
+      console.log(`Unhandled route: ${req.method} ${req.originalUrl}`);
+      
+      // Check if it's a Socket.IO request
+      if (req.originalUrl.startsWith('/socket.io/')) {
+        return res.status(200).send('Socket.IO endpoint');
+      }
+      
+      // Return JSON for API routes
+      if (req.originalUrl.startsWith('/api/')) {
+        return res.status(200).json({ 
+          message: 'API endpoint caught by catch-all handler',
+          path: req.originalUrl,
+          method: req.method
+        });
+      }
+      
+      // Default response for other routes
+      res.status(200).send(`
+        <html>
+          <head><title>Server Running</title></head>
+          <body>
+            <h1>Server is running</h1>
+            <p>The requested path "${req.originalUrl}" was handled by the catch-all route.</p>
+            <p>Time: ${new Date().toISOString()}</p>
+          </body>
+        </html>
+      `);
+    });
+
+    // Global error handler
+    app.use((err, req, res, next) => {
+      console.error('Global error handler caught:', err);
+      res.status(500).json({
+        error: 'Server error',
+        message: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack
+      });
     });
     
+    // For local development, start the server
+    if (process.env.NODE_ENV !== 'production') {
+      server.listen(PORT, () => {
+        console.log(`Server is running at ${PORT}`);
+      });
+    }
+    
+    return true;
   } catch (error) {
     console.error('Failed to initialize server:', error);
     console.error('MongoDB connection details:', {
       uri: process.env.URI ? process.env.URI.substring(0, 20) + '...[REDACTED]' : 'Not defined',
       nodeEnv: process.env.NODE_ENV,
-      // Log any other relevant info without exposing credentials
     });
-    process.exit(1); // Exit with error
+    return false;
   }
-})();
+};
+
+// Run setup in production
+if (process.env.NODE_ENV === 'production') {
+  setupServer().catch(err => console.error('Setup failed:', err));
+}
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  setupServer();
+}
+
+// Export for serverless
+module.exports.handler = serverless(app);
 
 
 
