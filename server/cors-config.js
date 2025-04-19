@@ -4,6 +4,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:5173",
   // Production client origins
   "https://developer-clinic.vercel.app",
+  "https://developer-clinic-61fwr79z2-devaakash26s-projects.vercel.app"
   // Add any other client domains here
 ];
 
