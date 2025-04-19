@@ -6,6 +6,8 @@ import { hideLoading, showLoading } from '../redux/loader';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import DoctorForm from '../components/DoctorForm';
+import { api } from '../utils/apiUtils';
+import { getApiUrl } from '../services/apiService';
 
 const ApplyDoctor = () => {
     const dispatch = useDispatch();
@@ -103,8 +105,9 @@ const ApplyDoctor = () => {
                 console.log(`${key}: ${value instanceof File ? value.name : value}`);
             }
             
+            // Using axios directly here since we need to send FormData
             const response = await axios.post(
-                'http://localhost:4000/api/user/apply-doctor',
+                getApiUrl('user/apply-doctor'),
                 formData,
                 {
                     headers: {

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
 import { FaEnvelope, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { apiFetch } from '../utils/apiUtils';
 
 function VerifyEmailNotice() {
     const dispatch = useDispatch();
@@ -30,13 +31,10 @@ function VerifyEmailNotice() {
             setIsSending(true);
             dispatch(showLoading());
 
-            const response = await fetch('http://localhost:4000/api/user/resend-verification', {
+            const response = await apiFetch('user/resend-verification', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ email }),
-            });
+            }, false); // false means don't include auth token
 
             const data = await response.json();
 

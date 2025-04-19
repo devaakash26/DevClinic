@@ -21,7 +21,7 @@ function VerifyEmail() {
             dispatch(showLoading());
             
             try {
-                const response = await fetch(`http://localhost:4000/api/user/verify-email/${token}`, {
+                const response = await apiFetch(`user/verify-email/${token}`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                 });

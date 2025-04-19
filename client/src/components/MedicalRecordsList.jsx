@@ -10,6 +10,7 @@ import {
   ClockCircleOutlined, UserOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { api } from '../utils/apiUtils';
 import moment from 'moment';
 import { fixCloudinaryPdfUrl, downloadPdf } from '../utils/pdfUtils';
 
@@ -52,7 +53,7 @@ const MedicalRecordsList = ({
   
   const handleDeleteRecord = async (recordId) => {
     try {
-      await axios.delete(`http://localhost:4000/api/doctor/medical-record/${recordId}`, {
+      await api.delete(`doctor/medical-record/${recordId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

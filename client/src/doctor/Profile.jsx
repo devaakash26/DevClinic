@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { api } from '../utils/apiUtils';
+import { apiFetch } from '../utils/apiUtils';
 import {
   Form,
   Tabs,
@@ -126,7 +128,7 @@ const Profile = () => {
 
       console.log("Submitting data:", formattedValues);
 
-      const response = await fetch("http://localhost:4000/api/doctor/update-doctor-profile", {
+      const response = await apiFetch(`doctor/update-doctor-profile`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,7 +169,7 @@ const Profile = () => {
   const getDoctorInfo = async () => {
     try {
       dispatch(showLoading());
-      const response = await axios.get(`http://localhost:4000/api/doctor/get-doctor-info`, {
+      const response = await api.get(`doctor/get-doctor-info`, {
         params: { userId: id },
         headers: {
           'Authorization': `Bearer ${localStorage.getItem("token")}`
@@ -291,8 +293,7 @@ const Profile = () => {
       setPasswordUpdateLoading(true);
       dispatch(showLoading());
 
-      const response = await axios.post(
-        'http://localhost:4000/api/user/update-password',
+      const response = await api.post(`user/update-password`,
         {
           userId: user._id,
           currentPassword: values.currentPassword,
@@ -351,8 +352,7 @@ const Profile = () => {
         try {
           dispatch(showLoading());
 
-          const response = await axios.post(
-            'http://localhost:4000/api/user/delete-account',
+          const response = await api.post(`user/delete-account`,
             { userId: user._id },
             {
               headers: {
@@ -383,8 +383,7 @@ const Profile = () => {
   const getDoctorTestimonials = async () => {
     try {
       setLoadingTestimonials(true);
-      const response = await axios.get(
-        `http://localhost:4000/api/doctor/get-doctor-testimonials`,
+      const response = await api.get(`doctor/get-doctor-testimonials`,
         {
           params: { doctorId: id },
           headers: {
@@ -444,8 +443,7 @@ const Profile = () => {
 
       const finalReason = unavailabilityReason === 'Other' ? otherReason : unavailabilityReason;
 
-      const response = await axios.post(
-        'http://localhost:4000/api/doctor/update-availability',
+      const response = await api.post(`doctor/update-availability`,
         {
           userId: user._id,
           isAvailable,

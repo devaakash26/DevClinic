@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../redux/userInfo';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { SOCKET_URL, getApiUrl } from '../services/apiService';
 
 // Create context
 const SocketContext = createContext();
@@ -27,7 +28,7 @@ export const SocketProvider = ({ children }) => {
     // Initialize socket connection only once with reconnection options
     useEffect(() => {
         console.log("Initializing socket connection...");
-        const newSocket = io('http://localhost:4000', {
+        const newSocket = io(SOCKET_URL, {
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
@@ -207,7 +208,7 @@ export const SocketProvider = ({ children }) => {
         
         try {
             console.log("Fetching latest notifications for user:", user._id);
-            const response = await axios.get(`http://localhost:4000/api/user/notifications/${user._id}`, {
+            const response = await axios.get(getApiUrl(`user/notifications/${user._id}`), {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }

@@ -21,6 +21,7 @@ import {
 import axios from 'axios';
 import moment from 'moment';
 import { hideLoading, showLoading } from '../../redux/loader';
+import { api } from '../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -59,8 +60,7 @@ const AdminMedicalRecords = () => {
       
       const token = localStorage.getItem('token');
       
-      const response = await axios.get(
-        'http://localhost:4000/api/admin/medical-records',
+      const response = await api.get(`admin/medical-records`,
         {
           headers: {
             Authorization: `Bearer ${token}`

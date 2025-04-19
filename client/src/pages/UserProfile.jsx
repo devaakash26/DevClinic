@@ -68,8 +68,7 @@ const UserProfile = () => {
         mobile: values.phone || values.mobile || user.mobile || user.phone
       };
       
-      const response = await axios.post(
-        'http://localhost:4000/api/user/update-profile',
+      const response = await api.post(`user/update-profile`,
         dataToUpdate,
         {
           headers: {
@@ -157,8 +156,7 @@ const UserProfile = () => {
       setUploadLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.post(
-        'http://localhost:4000/api/user/upload-profile-picture',
+      const response = await api.post(`user/upload-profile-picture`,
         formData,
         {
           headers: {
@@ -205,8 +203,7 @@ const UserProfile = () => {
       setPasswordUpdateLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.post(
-        'http://localhost:4000/api/user/update-password',
+      const response = await api.post(`user/update-password`,
         {
           userId: user._id,
           currentPassword: values.currentPassword,
@@ -241,8 +238,7 @@ const UserProfile = () => {
       setDeleteAccountLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.post(
-        'http://localhost:4000/api/user/delete-account',
+      const response = await api.post(`user/delete-account`,
         { userId: user._id },
         {
           headers: {

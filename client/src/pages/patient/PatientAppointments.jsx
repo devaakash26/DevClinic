@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { api } from '../../utils/apiUtils';
 import {
   Table,
   Tag,
@@ -99,7 +100,7 @@ const PatientAppointments = () => {
         checkConnection();
       }
 
-      const response = await axios.get('http://localhost:4000/api/debug/socket-status', {
+      const response = await api.get(`debug/socket-status`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
@@ -138,7 +139,7 @@ const PatientAppointments = () => {
       setLoading(true);
       dispatch(showLoading());
 
-      const response = await axios.get("http://localhost:4000/api/user/get-user-appointments", {
+      const response = await api.get(`user/get-user-appointments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -174,8 +175,7 @@ const PatientAppointments = () => {
         try {
           dispatch(showLoading());
 
-          const response = await axios.post(
-            "http://localhost:4000/api/user/cancel-appointment",
+          const response = await api.post(`user/cancel-appointment`,
             { appointmentId },
             {
               headers: {
@@ -435,8 +435,7 @@ const PatientAppointments = () => {
     try {
       console.log("Getting feedback for appointment:", appointmentId);
 
-      const response = await axios.get(
-        `http://localhost:4000/api/user/get-appointment-feedback?appointmentId=${appointmentId}`,
+      const response = await api.get(`user/get-appointment-feedback?appointmentId=${appointmentId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -503,8 +502,7 @@ const PatientAppointments = () => {
 
       console.log("Submitting feedback with data:", feedbackData);
 
-      const response = await axios.post(
-        "http://localhost:4000/api/user/submit-feedback",
+      const response = await api.post(`user/submit-feedback`,
         feedbackData,
         {
           headers: {
@@ -578,8 +576,7 @@ const PatientAppointments = () => {
         return [];
       }
       
-      const response = await axios.get(
-        `http://localhost:4000/api/doctor/medical-records-by-appointment/${appointmentId}`,
+      const response = await api.get(`doctor/medical-records-by-appointment/${appointmentId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -655,8 +652,7 @@ const PatientAppointments = () => {
         return;
       }
       
-      const response = await axios.post(
-        `http://localhost:4000/api/doctor/email-medical-record/${recordId}`,
+      const response = await api.post(`doctor/email-medical-record/${recordId}`,
         {},
         {
           headers: {
@@ -715,8 +711,7 @@ const PatientAppointments = () => {
                   icon={<BellOutlined />}
                   onClick={async () => {
                     try {
-                      const response = await axios.post(
-                        "http://localhost:4000/api/user/test-notification",
+                      const response = await api.post(`user/test-notification`,
                         { userId: user._id },
                         {
                           headers: {

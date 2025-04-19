@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
 import { FaUser, FaEnvelope, FaLock, FaUserPlus, FaShieldAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { apiFetch } from '../utils/apiUtils';
 
 function Register() {
     const dispatch = useDispatch();
@@ -57,7 +58,7 @@ function Register() {
             setIsRegistering(true);
             dispatch(showLoading());
 
-            const response = await fetch('http://localhost:4000/api/user/register', {
+            const response = await apiFetch(`user/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

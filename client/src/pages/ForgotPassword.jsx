@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
+import { apiFetch } from '../utils/apiUtils';
 
 function ForgotPassword() {
     const dispatch = useDispatch();
@@ -34,7 +35,7 @@ function ForgotPassword() {
         dispatch(showLoading());
 
         try {
-            const response = await fetch('http://localhost:4000/api/user/forgot-password', {
+            const response = await apiFetch(`user/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

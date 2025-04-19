@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { api } from "../../utils/apiUtils";
 import { 
   Table, 
   Tag, 
@@ -76,7 +77,7 @@ const DoctorAppointments = () => {
     try {
       setLoading(true);
       dispatch(showLoading());
-      const response = await axios.get("http://localhost:4000/api/doctor/get-patient-list", {
+      const response = await api.get(`doctor/get-patient-list`, {
         params: { doctorId: user?._id },
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -109,8 +110,7 @@ const DoctorAppointments = () => {
       }
       
       // dispatch(showLoading());
-      const response = await axios.post(
-        "http://localhost:4000/api/doctor/update-appointment-status",
+      const response = await api.post(`doctor/update-appointment-status`,
         {
           appointmentId: record._id,
           status: status,
@@ -152,8 +152,7 @@ const DoctorAppointments = () => {
   const deleteAppointment = async (appointmentId) => {
     try {
       dispatch(showLoading());
-      const response = await axios.delete(
-        "http://localhost:4000/api/doctor/delete-appointment",
+      const response = await api.delete(`doctor/delete-appointment`,
         {
           data: { appointmentId },
           headers: {

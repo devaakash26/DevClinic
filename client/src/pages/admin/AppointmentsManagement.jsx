@@ -11,6 +11,7 @@ import {
 import Layout from '../../components/Layout';
 import moment from 'moment';
 import '../../styles/tableResponsive.css';
+import { api } from '../../utils/apiUtils';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -37,7 +38,7 @@ function AppointmentsManagement() {
     try {
       setLoading(true);
       dispatch(showLoading());
-      const response = await axios.get('http://localhost:4000/api/admin/appointments', {
+      const response = await api.get(`admin/appointments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

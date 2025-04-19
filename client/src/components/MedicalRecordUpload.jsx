@@ -7,6 +7,8 @@ import {
   FilePdfOutlined, FileImageOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { api } from '../utils/apiUtils';
+import { getApiUrl } from '../services/apiService';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -87,8 +89,10 @@ const MedicalRecordUpload = ({
       formData.append('medicalRecord', file);
       
       console.log('Starting upload request to server...');
+      
+      // We're using axios directly here instead of api utility because we need to use FormData
       const response = await axios.post(
-        'http://localhost:4000/api/doctor/upload-medical-record',
+        getApiUrl('doctor/upload-medical-record'),
         formData,
         {
           headers: {

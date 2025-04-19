@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { api } from '../utils/apiUtils';
 import { 
   Tabs, Badge, Spin, Empty, Button, Input, 
   Dropdown, Menu, Tooltip, Switch, Select, DatePicker 
@@ -130,7 +131,7 @@ const NotificationsPage = () => {
       setIsLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.get(`http://localhost:4000/api/user/notifications/${user._id}`, {
+      const response = await api.get(`user/notifications/${user._id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }
@@ -162,8 +163,7 @@ const NotificationsPage = () => {
       setIsLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.post(
-        "http://localhost:4000/api/user/mark-as-all-seen",
+      const response = await api.post(`user/mark-as-all-seen`,
         { userId: user._id },
         {
           headers: {
@@ -198,8 +198,7 @@ const NotificationsPage = () => {
       setIsLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.post(
-        "http://localhost:4000/api/user/delete-all-notification",
+      const response = await api.post(`user/delete-all-notification`,
         { userId: user._id },
         {
           headers: {
@@ -235,8 +234,7 @@ const NotificationsPage = () => {
       
       console.log("Marking notification as seen:", notificationId);
       
-      const response = await axios.post(
-        "http://localhost:4000/api/user/mark-notification-seen",
+      const response = await api.post(`user/mark-notification-seen`,
         { 
           userId: user._id,
           notificationId: notificationId.toString() // Ensure ID is a string
@@ -280,8 +278,7 @@ const NotificationsPage = () => {
     try {
       setIsLoading(true);
       
-      const response = await axios.post(
-        "http://localhost:4000/api/user/delete-notification",
+      const response = await api.post(`user/delete-notification`,
         { 
           userId: user._id,
           notificationId
@@ -461,8 +458,7 @@ const NotificationsPage = () => {
       case 'delete':
         // Implement bulk delete functionality
         for (const notificationId of selectedNotifications) {
-          await axios.post(
-            "http://localhost:4000/api/user/delete-notification",
+          await api.post(`user/delete-notification`,
             { 
               userId: user._id,
               notificationId
@@ -476,8 +472,7 @@ const NotificationsPage = () => {
         }
         
         // Refresh user data to update notification lists
-        const deleteResponse = await axios.post(
-          "http://localhost:4000/api/user/get-user-info-by-id",
+        const deleteResponse = await api.post(`user/get-user-info-by-id`,
           { userId: user._id },
           {
             headers: {

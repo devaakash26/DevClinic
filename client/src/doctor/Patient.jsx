@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import { hideLoading, showLoading } from "../redux/loader";
 import toast from "react-hot-toast";
 import moment from "moment";
+import { api } from '../utils/apiUtils';
+import { getApiUrl } from '../services/apiService';
 import { 
   Table, Card, Row, Col, Statistic, Tag, Avatar, 
   Timeline, Modal, Button, Tooltip, Badge, Divider,
@@ -64,8 +66,7 @@ function Patient() {
     const ChangedStatus = async (record, status) => {
         try {
             dispatch(showLoading());
-            const response = await axios.post(
-                `http://localhost:4000/api/doctor/update-appointment-status`,
+            const response = await api.post(`doctor/update-appointment-status`,
                 { appointmentId: record._id, patientId: record.userId, status },
                 {
                     headers: {
@@ -90,7 +91,7 @@ function Patient() {
         try {
             dispatch(showLoading());
             setLoading(true);
-            const response = await axios.get("http://localhost:4000/api/doctor/get-patient-list", {
+            const response = await api.get(`doctor/get-patient-list`, {
                 params: { doctorId: id },
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -130,7 +131,7 @@ function Patient() {
             }
             
             // First, find the doctor ID by userId
-            const doctorResponse = await axios.get("http://localhost:4000/api/doctor/get-doctor-info", {
+            const doctorResponse = await api.get(`doctor/get-doctor-info`, {
                 params: { userId: id },
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -151,7 +152,7 @@ function Patient() {
             
             // Proceed with Excel download using the actual doctorId
             const response = await axios({
-                url: "http://localhost:4000/api/doctor/download-patients-excel",
+                url: getApiUrl(`doctor/download-patients-excel`),
                 method: "GET",
                 params: { doctorId: doctorId },
                 headers: {
@@ -243,8 +244,7 @@ function Patient() {
     const deleteDoctorRequest = async (appointmentId) => {
         try {
             dispatch(showLoading());
-            const response = await axios.delete(
-                "http://localhost:4000/api/doctor/delete-appointment",
+            const response = await api.delete(`doctor/delete-appointment`,
                 {
                     data: { appointmentId },
                     headers: {
@@ -306,7 +306,7 @@ function Patient() {
         
         setMedicalRecordsLoading(true);
         try {
-            const response = await axios.get('http://localhost:4000/api/doctor/patient-medical-records', {
+            const response = await api.get(`doctor/patient-medical-records`, {
                 params: { 
                     patientId,
                     doctorId: id 

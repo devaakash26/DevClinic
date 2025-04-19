@@ -9,6 +9,7 @@ import {
 import { FaPhone, FaEnvelope, FaHeadset, FaMapMarkerAlt, FaExclamationTriangle, FaQuestionCircle } from 'react-icons/fa';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { api } from '../utils/apiUtils';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -33,7 +34,7 @@ const Contact = () => {
         values.userName = user.name;
       }
       
-      const response = await axios.post('http://localhost:4000/api/support/contact', values, {
+      const response = await api.post(`support/contact`, values, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

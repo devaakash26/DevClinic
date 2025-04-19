@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 import { FaSearch, FaUser, FaEnvelope, FaBan, FaLock, FaUnlock, FaInfoCircle, FaFileExcel } from 'react-icons/fa';
 import { useSocket } from '../../context/SocketContext';
 import '../../styles/tableResponsive.css';
+import { api } from '../../utils/apiUtils';
+import { getApiUrl } from '../../services/apiService';
 
 const User = () => {
     const [users, setUsers] = useState([]);
@@ -26,7 +28,7 @@ const User = () => {
         try {
             setLoading(true);
             dispatch(showLoading());
-            const response = await axios.get("http://localhost:4000/api/admin/get-all-user", {
+            const response = await api.get("admin/get-all-user", {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -51,7 +53,7 @@ const User = () => {
         try {
             dispatch(showLoading());
             const response = await axios({
-                url: "http://localhost:4000/api/admin/download-users-excel",
+                url: getApiUrl("admin/download-users-excel"),
                 method: "GET",
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -102,8 +104,8 @@ const User = () => {
     const updateUserStatus = async (userId, status) => {
         try {
             dispatch(showLoading());
-            const response = await axios.post(
-                `http://localhost:4000/api/admin/update-user-status`,
+            const response = await api.post(
+                `admin/update-user-status`,
                 { userId, status },
                 {
                     headers: {
@@ -135,8 +137,8 @@ const User = () => {
     const resetUserPassword = async (userId) => {
         try {
             dispatch(showLoading());
-            const response = await axios.post(
-                `http://localhost:4000/api/admin/admin-reset-password`,
+            const response = await api.post(
+                `admin/admin-reset-password`,
                 { userId },
                 {
                     headers: {

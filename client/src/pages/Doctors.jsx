@@ -7,6 +7,7 @@ import DoctorCard from '../components/DoctorCard';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { detectUserLocation, INDIAN_STATES, INDIAN_CITIES_BY_STATE } from '../utils/locationUtils';
+import { api } from '../utils/apiUtils';
 
 // List of all medical departments
 const ALL_DEPARTMENTS = [
@@ -125,7 +126,7 @@ const Doctors = () => {
   const fetchDoctors = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:4000/api/user/get-all-aproved-doctor', {
+      const response = await api.get(`user/get-all-aproved-doctor`, {
         headers: {
           Authorization: 'Bearer ' + localStorage.getItem('token'),
         },

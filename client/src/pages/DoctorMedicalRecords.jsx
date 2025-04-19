@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { api } from '../utils/apiUtils';
+
 import Layout from '../components/Layout';
 import { 
   Card, Typography, Tabs, Spin, 
@@ -69,8 +71,7 @@ const DoctorMedicalRecords = () => {
       });
       
       // Try both doctorId and userId in case one works
-      const response = await axios.get(
-        'http://localhost:4000/api/doctor/medical-records',
+      const response = await api.get(`doctor/medical-records`,
         {
           params: {
             doctorId: doctorId, 
@@ -141,7 +142,7 @@ const DoctorMedicalRecords = () => {
         return;
       }
       
-      const response = await axios.get('http://localhost:4000/api/doctor/get-patient-list', {
+      const response = await api.get(`doctor/get-patient-list`, {
         params: { doctorId },
         headers: {
           Authorization: `Bearer ${token}`

@@ -3,7 +3,6 @@ import Layout from '../components/Layout';
 import { Tabs, Badge, Empty, Spin, Tooltip } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
 import { hideLoading, showLoading } from '../redux/loader';
 import toast from 'react-hot-toast';
 import { setUser } from '../redux/userInfo';
@@ -15,6 +14,7 @@ import {
     FaFilter, FaCalendarAlt, FaCheck, FaEye, FaRegBell,
     FaExclamationCircle, FaInfoCircle, FaCheckCircle
 } from 'react-icons/fa';
+import { api, apiFetch } from '../utils/apiUtils';
 
 const { TabPane } = Tabs;
 
@@ -44,11 +44,7 @@ const Notification = () => {
             setIsFetching(true);
             dispatch(showLoading());
             
-            const response = await axios.get(`http://localhost:4000/api/user/notifications/${currentUserId}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`
-                }
-            });
+            const response = await api.get(`user/notifications/${currentUserId}`);
             
             dispatch(hideLoading());
             
@@ -126,12 +122,8 @@ const Notification = () => {
         try {
             dispatch(showLoading());
 
-            const response = await fetch("http://localhost:4000/api/user/mark-as-all-seen", {
+            const response = await apiFetch("user/mark-as-all-seen", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`
-                },
                 body: JSON.stringify({ userId: currentUserId })
             });
 
@@ -167,12 +159,8 @@ const Notification = () => {
         try {
             dispatch(showLoading());
 
-            const response = await fetch("http://localhost:4000/api/user/mark-notification-seen", {
+            const response = await apiFetch("user/mark-notification-seen", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`
-                },
                 body: JSON.stringify({ 
                     userId: currentUserId,
                     notificationId: notificationId.toString() // Ensure ID is a string
@@ -214,12 +202,8 @@ const Notification = () => {
         try {
             dispatch(showLoading());
 
-            const response = await fetch("http://localhost:4000/api/user/delete-all-notification", {
+            const response = await apiFetch("user/delete-all-notification", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`
-                },
                 body: JSON.stringify({ userId: currentUserId })
             });
 

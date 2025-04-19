@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
+import { api } from '../../utils/apiUtils';
 import { Line, Pie } from '@ant-design/plots';
 import '../../styles/tableResponsive.css';
 
@@ -51,7 +52,7 @@ const PatientRecords = () => {
       setLoading(true);
       dispatch(showLoading());
       
-      const response = await axios.get('http://localhost:4000/api/admin/patient-records', {
+      const response = await api.get(`admin/patient-records`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

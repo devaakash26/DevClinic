@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
 import { FaEnvelope, FaLock, FaSignInAlt, FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
+import { getApiUrl } from '../services/apiService';
 
 function Login() {
     const dispatch = useDispatch();
@@ -88,9 +89,7 @@ function Login() {
                 return;
             }
 
-            // Use the environment variable for API URL or fallback to hardcoded URL
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-            const googleSignInUrl = `${apiUrl}/user/google-signin`;
+            const googleSignInUrl = getApiUrl('user/google-signin');
 
             console.log('Sending token to server at:', googleSignInUrl);
 
@@ -189,7 +188,7 @@ function Login() {
             setIsLoggingIn(true);
             dispatch(showLoading());
 
-            const response = await fetch('http://localhost:4000/api/user/login', {
+            const response = await fetch(getApiUrl('user/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

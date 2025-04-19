@@ -3,6 +3,8 @@ import axios from 'axios';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import DoctorCard from '../components/DoctorCard';
+import { api } from '../utils/apiUtils';
+import { getApiUrl } from '../services/apiService';
 import { 
   FaCalendarCheck, FaUserMd, FaHospital, FaPhone, FaSearch, 
   FaArrowRight, FaChevronRight, FaStethoscope, FaHeartbeat,
@@ -51,7 +53,7 @@ const Home = () => {
   // Fetch pending doctor applications for admin
   const fetchPendingDoctorApplications = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/admin/get-all-doctors", {
+      const response = await api.get(`admin/get-all-doctors`, {
         headers: {
           Authorization: 'Bearer ' + localStorage.getItem('token'),
         },
@@ -78,10 +80,10 @@ const Home = () => {
             console.log("Trying fallback endpoint");
             
             // Different fallback endpoints for doctor vs patient
-            let fallbackEndpoint = `http://localhost:4000/api/user/appointments/${user._id}`;
+            let fallbackEndpoint = getApiUrl(`user/appointments/${user._id}`);
             
             if (user?.isDoctor) {
-              fallbackEndpoint = `http://localhost:4000/api/doctor/get-doctor-appointments/${user._id}`;
+              fallbackEndpoint = getApiUrl(`doctor/get-doctor-appointments/${user._id}`);
               console.log("Using doctor fallback endpoint");
             }
             
@@ -135,11 +137,11 @@ const Home = () => {
         };
         
         // Use different endpoints based on user role
-        let endpoint = "http://localhost:4000/api/user/get-user-appointments";
+        let endpoint = getApiUrl(`user/get-user-appointments`);
         
         // If the user is a doctor, use the doctor appointments endpoint
         if (user?.isDoctor) {
-          endpoint = "http://localhost:4000/api/doctor/appointments";
+          endpoint = getApiUrl(`doctor/appointments`);
           console.log("Using doctor endpoint for appointments:", endpoint);
           
           // Doctor-specific appointment fetch
@@ -214,7 +216,7 @@ const Home = () => {
             
             // Try secondary doctor endpoint for approved appointments
             console.log("No appointments from primary endpoint, trying secondary doctor endpoint");
-            const secondaryEndpoint = "http://localhost:4000/api/doctor/approved-appointments";
+            const secondaryEndpoint = getApiUrl(`doctor/approved-appointments`);
             const secondaryResponse = await axios.get(secondaryEndpoint, {
               headers: {
                 Authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -368,7 +370,7 @@ const Home = () => {
   const getData = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:4000/api/user/get-all-aproved-doctor', {
+      const response = await api.get(`user/get-all-aproved-doctor`, {
         headers: {
           Authorization: 'Bearer ' + localStorage.getItem('token'),
         },

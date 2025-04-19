@@ -10,7 +10,7 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await axios.get('http://localhost:4000/api/user/get-all-aproved-doctor');
+        const res = await api.get(`user/get-all-aproved-doctor`);
         const approvedDoctors = res.data.data.filter(doctor => doctor.status === "approved");
         setDoctors(approvedDoctors.slice(0, 3));
       } catch (error) {

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
 import { FaLock, FaEye, FaEyeSlash, FaShieldAlt, FaCheck, FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
+import { apiFetch } from '../utils/apiUtils';
 
 function ResetPassword() {
     const dispatch = useDispatch();
@@ -37,7 +38,7 @@ function ResetPassword() {
         const validateToken = async () => {
             dispatch(showLoading());
             try {
-                const response = await fetch(`http://localhost:4000/api/user/verify-reset-token/${token}`, {
+                const response = await apiFetch(`user/verify-reset-token/${token}`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                 });
@@ -158,7 +159,7 @@ function ResetPassword() {
         dispatch(showLoading());
 
         try {
-            const response = await fetch('http://localhost:4000/api/user/reset-password', {
+            const response = await apiFetch(`user/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

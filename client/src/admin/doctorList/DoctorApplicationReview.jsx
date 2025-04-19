@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { hideLoading, showLoading } from '../../redux/loader';
 import { useSocket } from '../../context/SocketContext';
 import moment from 'moment';
+import { api } from '../../utils/apiUtils';
 
 const { TabPane } = Tabs;
 
@@ -31,7 +32,7 @@ const DoctorApplicationReview = () => {
         try {
             dispatch(showLoading());
             setLoading(true);
-            const response = await axios.get(`http://localhost:4000/api/admin/doctor-detail/${doctorId}`, {
+            const response = await api.get(`admin/doctor-detail/${doctorId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
@@ -102,8 +103,8 @@ const DoctorApplicationReview = () => {
                 reason: rejectReason
             });
             
-            const response = await axios.post(
-                `http://localhost:4000/api/admin/changed-doctor-account`,
+            const response = await api.post(
+                `admin/changed-doctor-account`,
                 {
                     doctorId: doctor._id, 
                     userId: doctorUserId, 

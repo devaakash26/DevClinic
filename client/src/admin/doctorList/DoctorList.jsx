@@ -11,6 +11,8 @@ import { FaSearch, FaEye, FaCheckCircle, FaTimesCircle, FaBan, FaEnvelope, FaPho
 import { useSocket } from '../../context/SocketContext';
 import moment from 'moment';
 import '../../styles/tableResponsive.css';
+import { api } from '../../utils/apiUtils';
+import { getApiUrl } from '../../services/apiService';
 
 const { TabPane } = Tabs;
 
@@ -38,8 +40,8 @@ const DoctorList = () => {
             
             console.log("Doctor userId being sent:", doctorUserId);
 
-            const response = await axios.post(
-                `http://localhost:4000/api/admin/changed-doctor-account`,
+            const response = await api.post(
+                `admin/changed-doctor-account`,
                 { 
                     doctorId: record._id, 
                     userId: doctorUserId, 
@@ -90,7 +92,7 @@ const DoctorList = () => {
     const deleteDoctorRequest = async (doctorId) => {
         try {
             dispatch(showLoading());
-            const response = await axios.delete(`http://localhost:4000/api/admin/delete-doctor-request/${doctorId}`, {
+            const response = await api.delete(`admin/delete-doctor-request/${doctorId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
@@ -114,15 +116,15 @@ const DoctorList = () => {
         try {
             setLoading(true);
             dispatch(showLoading());
-            const response = await fetch("http://localhost:4000/api/admin/get-all-doctors", {
-                method: 'GET',
+            const response = await api.get("admin/get-all-doctors", {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`
-                },
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
             });
-            const data = await response.json();
+            
             dispatch(hideLoading());
+            const data = response.data;
+            
             if (data.success) {
                 setDoctors(data.data);
                 setFilteredDoctors(data.data);
@@ -144,7 +146,7 @@ const DoctorList = () => {
         try {
             dispatch(showLoading());
             const response = await axios({
-                url: "http://localhost:4000/api/admin/download-doctors-excel",
+                url: getApiUrl("admin/download-doctors-excel"),
                 method: "GET",
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -177,7 +179,7 @@ const DoctorList = () => {
         try {
             setModalLoading(true);
             dispatch(showLoading());
-            const response = await axios.get(`http://localhost:4000/api/admin/doctor-detail/${doctorId}`, {
+            const response = await api.get(`admin/doctor-detail/${doctorId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }

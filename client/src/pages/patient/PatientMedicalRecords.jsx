@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { api } from '../../utils/apiUtils';
 import {
   Card, Button, Typography, Tabs, Spin, Empty, Input, Tag, Table,
   Space, Modal, Divider, Image, Avatar, Timeline, Statistic
@@ -43,8 +44,7 @@ const PatientMedicalRecords = () => {
       
       const token = localStorage.getItem('token');
       
-      const response = await axios.get(
-        'http://localhost:4000/api/user/patient-medical-records',
+      const response = await api.get(`user/patient-medical-records`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -193,8 +193,7 @@ const PatientMedicalRecords = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       
-      const response = await axios.post(
-        `http://localhost:4000/api/doctor/email-medical-record/${recordId}`,
+      const response = await api.post(`doctor/email-medical-record/${recordId}`,
         {},
         {
           headers: {

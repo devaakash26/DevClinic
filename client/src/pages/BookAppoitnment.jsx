@@ -23,6 +23,9 @@ import {
     StarOutlined,
     LikeOutlined
 } from '@ant-design/icons';
+import { api, apiFetch } from '../utils/apiUtils';
+import { getApiUrl } from '../services/apiService';
+import API_ENDPOINTS from '../services/apiConfig';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -526,17 +529,11 @@ function BookAppointment() {
             // Get already booked slots for the given date - more efficient than checking one by one
             try {
                 const effectiveDoctorId = doctor.userId || doctorId;
-                const bookedResponse = await axios.post(
-                    'http://localhost:4000/api/user/check-booked-slots',
+                const bookedResponse = await api.post(
+                    API_ENDPOINTS.USER.CHECK_BOOKED_SLOTS,
                     {
                         doctorId: effectiveDoctorId,
                         date: date.format('YYYY-MM-DD')
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json'
-                        }
                     }
                 );
                 
@@ -618,16 +615,9 @@ function BookAppointment() {
 
                 console.log("Sending availability check with payload:", payload);
                 
-                const response = await axios.post(
-                    'http://localhost:4000/api/user/check-book-availability', 
-                    payload,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json'
-                        },
-                        timeout: 10000
-                    }
+                const response = await api.post(
+                    API_ENDPOINTS.USER.CHECK_BOOK_AVAILABILITY, 
+                    payload
                 );
                 
                 console.log("Availability response for", timeString, ":", response.data);
@@ -727,16 +717,9 @@ function BookAppointment() {
                         
                         console.log(`Checking future slot on ${formattedDate} at ${timeString}`);
                         
-                        const response = await axios.post(
-                            'http://localhost:4000/api/user/check-book-availability', 
-                            payload,
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                timeout: 8000 // 8 second timeout
-                            }
+                        const response = await api.post(
+                            'user/check-book-availability', 
+                            payload
                         );
                         
                         console.log(`Availability response for future slot on ${formattedDate} at ${timeString}:`, response.data);
@@ -800,17 +783,7 @@ function BookAppointment() {
             const encodedDoctorId = encodeURIComponent(doctorId);
             console.log("Encoded doctorId:", encodedDoctorId);
             
-            const response = await axios({
-                method: 'get',
-                url: 'http://localhost:4000/api/doctor/get-doctor-info-by-id',
-                params: { doctorId: encodedDoctorId },
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                timeout: 15000 // 15 second timeout
-            });
+            const response = await api.get(API_ENDPOINTS.DOCTOR.GET_DOCTOR_BY_ID(encodedDoctorId));
             
             console.log("API Response:", response.data);
             dispatch(hideLoading());
@@ -949,14 +922,9 @@ function BookAppointment() {
             
             console.log('Sending appointment booking request with payload:', payload);
             
-            const response = await axios.post(
-                'http://localhost:4000/api/user/book-appointment', 
-                payload,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
+            const response = await api.post(
+                API_ENDPOINTS.USER.BOOK_APPOINTMENT, 
+                payload
             );
 
             dispatch(hideLoading());
@@ -1151,17 +1119,9 @@ function BookAppointment() {
             }
             
             // Make a direct request with minimal wrapping
-            const testResponse = await fetch(
-                `http://localhost:4000/api/doctor/get-doctor-info-by-id?doctorId=${encodeURIComponent(doctorId)}`, 
-                {
-                    method: 'GET',
-                headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    },
-                }
-            );
+            const testResponse = await api.get(API_ENDPOINTS.DOCTOR.GET_DOCTOR_BY_ID(encodeURIComponent(doctorId)));
             
-            const testData = await testResponse.json();
+            const testData = testResponse.data;
             console.log("Direct API test result:", {
                 status: testResponse.status,
                 ok: testResponse.ok,
@@ -1750,15 +1710,9 @@ function BookAppointment() {
         try {
             console.log("Fetching testimonials for doctor:", doctorId);
             
-            const response = await axios.get(
-                `http://localhost:4000/api/doctor/get-doctor-testimonials`,
-                {
-                    params: { doctorId },
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                }
-            );
+            const response = await api.get(API_ENDPOINTS.DOCTOR.GET_TESTIMONIALS, {
+                params: { doctorId }
+            });
             
             console.log("Testimonials response:", response.data);
             
@@ -1777,15 +1731,9 @@ function BookAppointment() {
                         // Otherwise, try to fetch patient details
                         try {
                             if (testimonial.patientId) {
-                                const patientResponse = await axios.get(
-                                    `http://localhost:4000/api/user/get-patient-info`,
-                                    {
-                                        params: { userId: testimonial.patientId },
-                                        headers: {
-                                            Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                        },
-                                    }
-                                );
+                                const patientResponse = await api.get(API_ENDPOINTS.USER.GET_PATIENT_INFO, {
+                                    params: { userId: testimonial.patientId }
+                                });
                                 
                                 if (patientResponse.data.success) {
                                     // Add patient name to testimonial if showAsTestimonial is true
@@ -2253,7 +2201,7 @@ window.testBatchSlotCheck = async (doctorId, date) => {
             console.log("Converted date format from DD-MM-YYYY to YYYY-MM-DD:", formattedDate);
         }
         
-        const response = await fetch('http://localhost:4000/api/user/check-booked-slots', {
+        const response = await apiFetch(`user/check-booked-slots`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
