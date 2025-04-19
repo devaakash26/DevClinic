@@ -22,7 +22,9 @@ app.use(cors(corsOptions));
 // Connect to database before setting up routes
 (async () => {
   try {
+    console.log("Attempting to connect to database...");
     await DbConnect();
+    console.log("Database connection established successfully");
     
     // Set up routes and middleware after DB connection
     app.use(express.json({ limit: '50mb' }));
@@ -212,6 +214,11 @@ app.use(cors(corsOptions));
     
   } catch (error) {
     console.error('Failed to initialize server:', error);
+    console.error('MongoDB connection details:', {
+      uri: process.env.URI ? process.env.URI.substring(0, 20) + '...[REDACTED]' : 'Not defined',
+      nodeEnv: process.env.NODE_ENV,
+      // Log any other relevant info without exposing credentials
+    });
     process.exit(1); // Exit with error
   }
 })();

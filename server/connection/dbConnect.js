@@ -20,7 +20,11 @@ const dbConnect = async () => {
             useUnifiedTopology: true,
             connectTimeoutMS: 30000,
             socketTimeoutMS: 30000,
-            serverSelectionTimeoutMS: 30000
+            serverSelectionTimeoutMS: 30000,
+            ssl: true,
+            sslValidate: true,
+            retryWrites: true,
+            w: "majority"
         };
 
         console.log("Connecting to database...");
