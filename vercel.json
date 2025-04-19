@@ -1,12 +1,15 @@
 {
   "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
   "builds": [
     {
       "src": "client/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "zeroConfig": true
+        "buildCommand": "npm run build"
       }
     },
     {
@@ -31,11 +34,11 @@
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json))",
-      "dest": "client/dist/$1"
+      "dest": "/client/dist/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "client/dist/index.html"
+      "dest": "/client/dist/index.html"
     }
   ]
 } 
