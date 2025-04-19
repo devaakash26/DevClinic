@@ -18,8 +18,13 @@ export const getApiUrl = (endpoint) => {
   return `${API_BASE_URL}/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}`;
 };
 
-// Socket URL - don't include the path as it's specified in the Socket.IO options
+// Socket URL with explicit configuration to avoid path issues
 export const SOCKET_URL = SERVER_URL;
+
+// Debug URLs
+console.log("API Base URL:", API_BASE_URL);
+console.log("Server URL:", SERVER_URL);
+console.log("Socket URL:", SOCKET_URL);
 
 export default {
   API_BASE_URL,

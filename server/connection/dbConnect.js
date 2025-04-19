@@ -15,9 +15,8 @@ const dbConnect = async () => {
 
     // If connection is in progress, wait for it
     if (!cached.promise) {
+        // Updated options - removed deprecated ones
         const opts = {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             connectTimeoutMS: 30000,
             socketTimeoutMS: 30000,
             serverSelectionTimeoutMS: 30000

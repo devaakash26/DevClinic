@@ -23,6 +23,14 @@
             "methods": ["GET", "OPTIONS"]
         },
         {
+            "src": "/socket.io/([^/]+)/websocket",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/socket.io/([^/]+)/polling",
+            "dest": "/index.js"
+        },
+        {
             "src": "/socket.io/(.*)",
             "dest": "/index.js",
             "headers": {

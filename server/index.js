@@ -17,7 +17,15 @@ const cors = require("cors");
 const corsOptions = require('./cors-config');
 const PORT = process.env.PORT || 4000;
 
+// Apply middleware before any route definitions
 app.use(cors(corsOptions));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+
+// Create HTTP server
+const server = http.createServer(app);
 
 // Connect to database before setting up routes
 (async () => {
@@ -26,21 +34,35 @@ app.use(cors(corsOptions));
     await DbConnect();
     console.log("Database connection established successfully");
     
-    // Set up routes and middleware after DB connection
-    app.use(express.json({ limit: '50mb' }));
-    app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+    // Set up API routes
     app.use('/api/user', authUser);
     app.use('/api/user', userFeedbackRoutes);
     app.use('/api/admin', adminRoute);
     app.use('/api/doctor', doctorRoute);
     app.use('/api/support', supportRoute);
-
-    app.use(bodyParser.json({ limit: '50mb' }));
-    app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     
-    // Create HTTP server
-    const server = http.createServer(app);
+    // Add server health endpoint for Socket.IO
+    app.get('/socket.io', (req, res) => {
+      res.status(200).send('Socket.IO endpoint is ready.');
+    });
 
+    // Test route to confirm middleware is working
+    app.post('/api/test-body-parser', (req, res) => {
+      console.log('Received body:', req.body);
+      res.status(200).json({ 
+        receivedBody: req.body,
+        bodyParserWorking: !!req.body 
+      });
+    });
+
+    // Respond to Socket.IO handshake requests
+    app.options('/socket.io/*', (req, res) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.sendStatus(200);
+    });
+    
     // Initialize Socket.io with Vercel-compatible settings
     const io = new Server(server, {
       cors: corsOptions,
@@ -230,19 +252,6 @@ app.use(cors(corsOptions));
         environment: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
       });
-    });
-
-    // Add server health endpoint for Socket.IO
-    app.get('/socket.io', (req, res) => {
-      res.status(200).send('Socket.IO endpoint is ready.');
-    });
-
-    // Respond to Socket.IO handshake requests
-    app.options('/socket.io/*', (req, res) => {
-      res.header('Access-Control-Allow-Origin', '*');
-      res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      res.sendStatus(200);
     });
 
     // Socket.IO test route
