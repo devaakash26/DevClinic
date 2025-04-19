@@ -10,14 +10,12 @@ const dbConnect = require("./connection/dbConnect");
 
 const app = express();
 
-// Middlewares
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Health Check Routes
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
