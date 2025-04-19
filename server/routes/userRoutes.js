@@ -8,7 +8,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const moment = require('moment');
 const Appointments = require("../models/AppointmentModel");
 const { upload } = require("../cloudConfig/multerConfig");
-const { sendVerificationEmail, sendPasswordResetEmail, sendAppointmentRequestedPatientEmail, sendAppointmentRequestedDoctorEmail } = require("../utils/emailService");
+const { sendVerificationEmail, sendPasswordResetEmail, sendAppointmentRequestedPatientEmail, sendAppointmentRequestedDoctorEmail, sendWelcomeEmail } = require("../utils/emailService");
 const { OAuth2Client } = require('google-auth-library');
 const mongoose = require('mongoose');
 const crypto = require("crypto");
@@ -63,12 +63,34 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
             return res.status(200).send({ message: "Password Incorrect", success: false });
-        } else {
-            const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-                expiresIn: "1d"
+        } 
+        
+        // Check if the user's email is verified
+        if (!user.isEmailVerified) {
+            return res.status(200).send({ 
+                message: "Please verify your email address before logging in. Check your inbox for the verification link.", 
+                success: false,
+                emailNotVerified: true
             });
-            res.status(200).send({ message: "Login Successful", success: true, data: token });
         }
+        
+        // Check if this is the first login (welcome email not sent yet)
+        if (user.isEmailVerified && !user.welcomeEmailSent) {
+            // Send welcome email
+            await sendWelcomeEmail(user.email, user.name);
+            
+            // Update user record to indicate welcome email has been sent
+            user.welcomeEmailSent = true;
+            await user.save();
+            
+            console.log(`Welcome email sent to ${user.name} (${user.email})`);
+        }
+        
+        // Email is verified, proceed with login
+        const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: "1d"
+        });
+        res.status(200).send({ message: "Login Successful", success: true, data: token });
     } catch (error) {
         console.log(error);
         return res.status(500).send({ message: "Something went wrong", success: false });
@@ -113,6 +135,7 @@ router.post('/google-signin', async (req, res) => {
         
         // Check if user already exists
         let user = await User.findOne({ email });
+        let isNewUser = false;
         
         if (user) {
             // User exists, update their profile if needed
@@ -144,7 +167,20 @@ router.post('/google-signin', async (req, res) => {
             });
             
             user = await newUser.save();
+            isNewUser = true;
             console.log("Created new user from Google sign-in");
+        }
+        
+        // Check if welcome email should be sent
+        if (!user.welcomeEmailSent) {
+            // Send welcome email
+            await sendWelcomeEmail(user.email, user.name);
+            
+            // Update user record to indicate welcome email has been sent
+            user.welcomeEmailSent = true;
+            await user.save();
+            
+            console.log(`Welcome email sent to ${user.name} (${user.email})`);
         }
         
         // Generate JWT token
@@ -1718,6 +1754,72 @@ router.get("/patient-medical-records", authMiddleware, async (req, res) => {
       error: error.message
     });
   }
+});
+
+// Resend Verification Email
+router.post("/resend-verification", async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).send({
+                message: "Email is required",
+                success: false
+            });
+        }
+        
+        // Find the user by email
+        const user = await User.findOne({ email });
+        
+        if (!user) {
+            return res.status(404).send({
+                message: "No account found with this email",
+                success: false
+            });
+        }
+        
+        // Check if the user is already verified
+        if (user.isEmailVerified) {
+            return res.status(200).send({
+                message: "Your email is already verified. Please login.",
+                success: true,
+                alreadyVerified: true
+            });
+        }
+        
+        // Generate a new verification token
+        const verificationToken = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        // Update user with new token and expiry
+        user.emailVerificationToken = verificationToken;
+        user.emailVerificationExpires = Date.now() + 86400000; // 24 hours
+        await user.save();
+        
+        // Send the verification email
+        const emailSent = await sendVerificationEmail(user.email, user.name, verificationToken);
+        
+        if (emailSent) {
+            return res.status(200).send({
+                message: "Verification email has been sent. Please check your inbox.",
+                success: true
+            });
+        } else {
+            return res.status(500).send({
+                message: "Failed to send verification email. Please try again later.",
+                success: false
+            });
+        }
+    } catch (error) {
+        console.error("Error resending verification email:", error);
+        return res.status(500).send({
+            message: "Something went wrong while sending verification email",
+            success: false
+        });
+    }
 });
 
 module.exports = router;

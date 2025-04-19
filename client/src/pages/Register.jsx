@@ -138,7 +138,7 @@ function Register() {
 
             <nav className="bg-white shadow-md py-4">
                 <div className="container mx-auto px-4 flex justify-between items-center">
-                    <div className="text-2xl font-bold text-blue-600">DevClinic</div>
+                <Link to="/" className="text-2xl font-bold text-blue-600">DevClinic</Link>
                     <div className="flex space-x-4">
                         <Link to="/login" className="px-4 py-2 text-blue-600 hover:text-blue-800 transition-colors duration-300">Login</Link>
                         <Link to="/register" className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300">Sign Up</Link>

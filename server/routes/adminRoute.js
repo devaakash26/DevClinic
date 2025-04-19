@@ -3,12 +3,14 @@ const router = express.Router();
 const User = require("../models/user");
 const Doctor = require("../models/Doctor")
 const Appointment = require("../models/AppointmentModel");
+const MedicalRecord = require("../models/MedicalRecordModel");
 const bcrypt = require("bcryptjs"); require("jsonwebtoken");
 const jwt = require("jsonwebtoken")
 const authMiddleware = require("../middleware/authMiddleware");
 const mongoose = require('mongoose');
 const moment = require("moment");
 const ExcelJS = require('exceljs');
+const { sendDoctorAccountApprovedEmail, sendDoctorAccountRejectedEmail } = require('../utils/emailService');
 
 //get a user list
 
@@ -127,6 +129,7 @@ router.post("/changed-doctor-account", authMiddleware, async (req, res) => {
             });
         }
         
+        // Send real-time notification
         const io = req.app.get('io');
         if (io) {
             // Direct emit to specific user - no broadcasting
@@ -141,6 +144,27 @@ router.post("/changed-doctor-account", authMiddleware, async (req, res) => {
             });
             
             console.log(`Notification sent to user ${doctorAc._id} about doctor status change`);
+        }
+
+        // Send email notification based on status
+        try {
+            const doctorEmail = doctor.email;
+            const doctorName = `${doctor.firstname} ${doctor.lastname}`;
+
+            if (doctorEmail) {
+                if (status === "approved") {
+                    // Send approval email
+                    await sendDoctorAccountApprovedEmail(doctorEmail, doctorName);
+                    console.log(`Doctor account approval email sent to: ${doctorEmail}`);
+                } else if (status === "rejected") {
+                    // Send rejection email with reason
+                    await sendDoctorAccountRejectedEmail(doctorEmail, doctorName, reason || "Your application did not meet our current requirements.");
+                    console.log(`Doctor account rejection email sent to: ${doctorEmail} with reason: ${reason || "No specific reason provided"}`);
+                }
+            }
+        } catch (emailError) {
+            console.error("Error sending doctor status update email:", emailError);
+            // Continue with response even if email fails
         }
 
         res.status(200).send({
@@ -678,6 +702,39 @@ router.get("/download-doctors-excel", authMiddleware, async (req, res) => {
         console.error("Error generating Excel:", error);
         res.status(500).send({
             message: "Error generating Excel file",
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Get all patient medical records (admin view)
+router.get("/medical-records", authMiddleware, async (req, res) => {
+    try {
+        // Verify admin privileges
+        const admin = await User.findById(req.userId);
+        if (!admin || !admin.isAdmin) {
+            return res.status(403).send({
+                message: "Unauthorized access. Admin privileges required.",
+                success: false
+            });
+        }
+
+        // Find all medical records using the imported model
+        const records = await MedicalRecord.find({})
+            .populate('doctorId', 'name firstname lastname email phone')
+            .populate('patientId', 'name email phone')
+            .sort({ createdAt: -1 });
+
+        res.status(200).send({
+            message: "Medical records fetched successfully",
+            success: true,
+            data: records
+        });
+    } catch (error) {
+        console.error("Error fetching admin medical records:", error);
+        res.status(500).send({
+            message: "Error fetching medical records",
             success: false,
             error: error.message
         });

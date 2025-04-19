@@ -87,7 +87,6 @@ const DoctorAppointments = () => {
       
       if (response.data.success) {
         setAppointments(response.data.patients);
-        console.log("Appointments fetched:", response.data.patients);
         calculateStats(response.data.patients);
       } else {
         toast.error(response.data.message || "Failed to fetch appointments");

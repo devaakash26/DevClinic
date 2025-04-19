@@ -8,7 +8,8 @@ import {
   FaArrowRight, FaChevronRight, FaStethoscope, FaHeartbeat,
   FaMedkit, FaRegClock, FaIdCard, FaVideo, FaCommentDots, FaTimes,
   FaChartLine, FaShieldAlt, FaClipboardCheck, FaTachometerAlt,
-  FaBriefcaseMedical, FaMapMarkerAlt, FaUserInjured, FaRegCalendarAlt
+  FaBriefcaseMedical, FaMapMarkerAlt, FaUserInjured, FaRegCalendarAlt,
+  FaUserPlus
 } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -19,6 +20,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [pendingDoctorApplications, setPendingDoctorApplications] = useState(0);
   const [healthMetrics, setHealthMetrics] = useState({
     weeklyActivity: [65, 72, 68, 82, 75, 78, 90],
     medicationAdherence: 92,
@@ -39,7 +41,30 @@ const Home = () => {
         totalPatients: 124
       }));
     }
+    
+    // Fetch pending doctor applications count if user is admin
+    if (user?.isAdmin) {
+      fetchPendingDoctorApplications();
+    }
   }, [user]);
+  
+  // Fetch pending doctor applications for admin
+  const fetchPendingDoctorApplications = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/api/admin/get-all-doctors", {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        },
+      });
+      
+      if (response.data.success) {
+        const pendingCount = response.data.data.filter(doc => doc.status === 'pending').length;
+        setPendingDoctorApplications(pendingCount);
+      }
+    } catch (error) {
+      console.error("Error fetching pending doctor applications:", error);
+    }
+  };
 
   // Get user appointments
   const getAppointments = async () => {
@@ -479,7 +504,7 @@ const Home = () => {
                     </div>
                     <div className="text-left">
                       <h2 className="text-2xl md:text-3xl font-bold text-white">
-                        <span className="opacity-90">{getGreeting()},</span> <span className="text-blue-200">{user.name?.split(' ')[0]}</span>
+                        <span className="opacity-90">{getGreeting()},</span> <span className="text-blue-200">{user?.isDoctor && "Dr. "}   { user.name?.split(' ')[0]}</span>
                       </h2>
                       <p className="text-blue-200 opacity-90 text-sm md:text-base">
                         {user?.isAdmin ? 'Hospital Admin Dashboard' : user?.isDoctor ? 'Doctor Management Portal' : 'Personal Health Dashboard'}
@@ -489,15 +514,26 @@ const Home = () => {
                   
                   {/* Dashboard Quick Stats Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in-up animation-delay-200">
-                    {/* Appointments Card */}
+                    {/* First Card - Appointments or Doctor Applications based on user role */}
                     <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20 hover:bg-opacity-15 hover:border-opacity-30 transition-all duration-300 transform hover:-translate-y-1 group">
                       <div className="flex flex-col">
                         <div className="text-blue-100 mb-2">
-                          <FaRegCalendarAlt className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          {user?.isAdmin ? (
+                            <FaUserPlus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          ) : (
+                            <FaRegCalendarAlt className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          )}
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-bold text-white">{upcomingAppointments?.length || 0}</h3>
+                        <h3 className="text-2xl md:text-3xl font-bold text-white">
+                          {user?.isAdmin ? pendingDoctorApplications : upcomingAppointments?.length || 0}
+                        </h3>
                         <p className="text-blue-200 text-xs mt-1">
-                          {user?.isDoctor ? 'Upcoming Patients' : 'Upcoming Appointments'}
+                          {user?.isAdmin 
+                            ? 'Doctor Applications' 
+                            : user?.isDoctor 
+                              ? 'Upcoming Patients' 
+                              : 'Upcoming Appointments'
+                          }
                         </p>
                       </div>
                     </div>
@@ -540,20 +576,64 @@ const Home = () => {
                   
                   {/* Quick Action Buttons */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up animation-delay-300">
-                    <Link 
-                      to="/appointments"
-                      className="flex items-center justify-center px-6 py-3.5 bg-white bg-opacity-90 text-blue-700 rounded-xl font-medium hover:bg-opacity-100 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
-                    >
-                      <FaCalendarCheck className="mr-2 group-hover:scale-110 transition-transform" /> 
-                      <span>Manage Appointments</span>
-                    </Link>
-                    <Link 
-                      to="/doctors"
-                      className="flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
-                    >
-                      <FaSearch className="mr-2 group-hover:scale-110 transition-transform" /> 
-                      <span>Find Specialists</span>
-                    </Link>
+                    {user?.isAdmin ? (
+                      // Admin buttons
+                      <>
+                        <Link 
+                          to="/admin/doctor-list"
+                          className="flex items-center justify-center px-6 py-3.5 bg-white bg-opacity-90 text-blue-700 rounded-xl font-medium hover:bg-opacity-100 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaUserMd className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Manage Doctors</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/admin/appointments"
+                          className="flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaCalendarCheck className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Manage Appointments</span>
+                        </Link>
+                      </>
+                    ) : user?.isDoctor ? (
+                      // Doctor buttons
+                      <>
+                        <Link 
+                          to="/doctor/appointments"
+                          className="flex items-center justify-center px-6 py-3.5 bg-white bg-opacity-90 text-blue-700 rounded-xl font-medium hover:bg-opacity-100 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaBriefcaseMedical className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Manage Appointments</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/doctor/medical-records"
+                          className="flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaClipboardCheck className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Quick Access</span>
+                        </Link>
+                      </>
+                    ) : (
+                      // Patient buttons
+                      <>
+                        <Link 
+                          to="/appointments"
+                          className="flex items-center justify-center px-6 py-3.5 bg-white bg-opacity-90 text-blue-700 rounded-xl font-medium hover:bg-opacity-100 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaCalendarCheck className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Manage Appointments</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/doctors"
+                          className="flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40 transform hover:-translate-y-1 group"
+                        >
+                          <FaSearch className="mr-2 group-hover:scale-110 transition-transform" /> 
+                          <span>Find Specialists</span>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -637,12 +717,39 @@ const Home = () => {
                       
                       <div className="col-span-6 bg-gray-800 rounded-lg border border-gray-700 p-3 shadow-inner mb-1">
                         <h4 className="text-white text-sm font-medium mb-3 flex items-center justify-between">
-                          <span>Upcoming Appointments</span>
-                          <Link to={user?.isDoctor ? "/doctor/appointments" : "/appointments"} className="text-xs text-blue-400 hover:text-blue-300 font-normal flex items-center">
+                          <span>
+                            {user?.isAdmin ? 'Doctor Applications' : 'Upcoming Appointments'}
+                          </span>
+                          <Link 
+                            to={
+                              user?.isAdmin 
+                                ? "/admin/doctor-list" 
+                                : user?.isDoctor 
+                                  ? "/doctor/appointments" 
+                                  : "/appointments"
+                            } 
+                            className="text-xs text-blue-400 hover:text-blue-300 font-normal flex items-center"
+                          >
                             View All <FaChevronRight className="ml-1 h-2 w-2" />
                           </Link>
                         </h4>
-                        {upcomingAppointments && upcomingAppointments.length > 0 ? (
+                        {user?.isAdmin ? (
+                          // For admin: Show doctor applications summary
+                          <div className="p-4 bg-gray-900 bg-opacity-50 rounded-lg border border-gray-700 border-opacity-50 flex flex-col items-center justify-center">
+                            <div className="text-gray-400 mb-2">
+                              <FaUserPlus className="h-8 w-8 opacity-50" />
+                            </div>
+                            <p className="text-gray-400 text-sm text-center">
+                              {pendingDoctorApplications > 0 
+                                ? `${pendingDoctorApplications} pending doctor application${pendingDoctorApplications !== 1 ? 's' : ''}` 
+                                : 'No pending doctor applications'}
+                            </p>
+                            <Link to="/admin/doctor-list" className="mt-2 text-blue-400 text-xs hover:text-blue-300 inline-flex items-center px-3 py-1 bg-blue-900 bg-opacity-30 rounded-full">
+                              Manage Applications <FaArrowRight className="ml-1 h-2 w-2" />
+                            </Link>
+                          </div>
+                        ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
+                          // For doctor/patient: Show upcoming appointments
                           <div className="space-y-2 max-h-36 overflow-y-auto pr-2 custom-scrollbar">
                             {upcomingAppointments.slice(0, 2).map((apt, index) => {
                               // For doctor view: show patient info
@@ -686,6 +793,7 @@ const Home = () => {
                             })}
                           </div>
                         ) : (
+                          // No upcoming appointments
                           <div className="p-4 bg-gray-900 bg-opacity-50 rounded-lg border border-gray-700 border-opacity-50 flex flex-col items-center justify-center">
                             <div className="text-gray-400 mb-2">
                               <FaRegCalendarAlt className="h-8 w-8 opacity-50" />

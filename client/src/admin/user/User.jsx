@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaSearch, FaUser, FaEnvelope, FaBan, FaLock, FaUnlock, FaInfoCircle, FaFileExcel } from 'react-icons/fa';
 import { useSocket } from '../../context/SocketContext';
+import '../../styles/tableResponsive.css';
 
 const User = () => {
     const [users, setUsers] = useState([]);
@@ -302,32 +303,32 @@ const User = () => {
         {
             title: "Actions",
             key: "actions",
+            className: "action-buttons-cell",
             render: (text, record) => (
-                <Space size="small">
-                    <Button 
-                        type="primary" 
-                        icon={<FaInfoCircle />} 
+                <Space size="small" wrap>
+                    <Button
+                        type="primary"
+                        icon={<FaInfoCircle />}
                         onClick={() => getUserDetails(record)}
                         title="View Details"
                     >
                         Details
                     </Button>
                     
-                    {(record.status === 'blocked' || !record.status) && (
-                        <Button 
+                    {record.status === 'blocked' || !record.status ? (
+                        <Button
                             type="primary"
-                            icon={<FaUnlock />} 
+                            className="bg-success border-0"
+                            icon={<FaUnlock />}
                             onClick={() => showConfirmModal('unblock', record)}
                             title="Unblock User"
                         >
                             Unblock
                         </Button>
-                    )}
-
-                    {record.status === 'active' && (
-                        <Button 
+                    ) : (
+                        <Button
                             danger
-                            icon={<FaBan />} 
+                            icon={<FaBan />}
                             onClick={() => showConfirmModal('block', record)}
                             title="Block User"
                         >
@@ -336,7 +337,8 @@ const User = () => {
                     )}
                     
                     <Button
-                        type="default"
+                        type="primary"
+                        className="bg-warning border-0"
                         icon={<FaLock />}
                         onClick={() => showConfirmModal('reset', record)}
                         title="Reset Password"
@@ -354,7 +356,7 @@ const User = () => {
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800 m-0">User Management</h2>
-                        <p className="text-gray-500 m-0 mt-1">Manage user accounts and permissions</p>
+                        <p className="text-gray-500 m-0 mt-1">Manage system users and their access</p>
                     </div>
                     <div className="flex items-center">
                         <Button 
@@ -421,17 +423,21 @@ const User = () => {
                     </Card>
                 </div>
                 
-                <Table 
-                    columns={columns} 
-                    dataSource={filteredUsers} 
-                    rowKey="_id"
-                    loading={loading}
-                    pagination={{ 
-                        pageSize: 10,
-                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
-                    }}
-                    className="shadow-sm rounded-lg overflow-hidden"
-                />
+                <div className="responsive-table-container">
+                    <Table
+                        columns={columns}
+                        dataSource={filteredUsers}
+                        rowKey="_id"
+                        loading={loading}
+                        pagination={{
+                            pageSize: 10,
+                            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
+                        }}
+                        className="shadow-sm rounded-lg overflow-hidden"
+                        scroll={{ x: 'max-content' }}
+                    />
+                    <div className="scroll-indicator">Scroll →</div>
+                </div>
             </Card>
             
             {/* User Details Modal */}

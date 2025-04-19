@@ -209,7 +209,17 @@ function Login() {
                 localStorage.setItem("token", data.data);
                 navigate('/');
             } else {
-                toast.error(data.message);
+                // Special handling for unverified email
+                if (data.emailNotVerified) {
+                    toast.error(data.message);
+                    // Store the email to pre-fill in case they need to request a new verification link
+                    localStorage.setItem("pendingVerificationEmail", values.email);
+                    // Redirect to a page where they can request a new verification link if needed
+                    navigate('/verify-email-notice');
+                } else {
+                    // Regular error message
+                    toast.error(data.message);
+                }
             }
         } catch (error) {
             toast.error('Something went wrong');
@@ -224,7 +234,7 @@ function Login() {
 
             <nav className="bg-white shadow-md py-4">
                 <div className="container mx-auto px-4 flex justify-between items-center">
-                    <div className="text-2xl font-bold text-blue-600">DevClinic</div>
+                    <Link to="/" className="text-2xl font-bold text-blue-600">DevClinic</Link>
                     <div className="flex space-x-4">
                         <Link to="/login" className="px-4 py-2 text-blue-600 hover:text-blue-800 transition-colors duration-300">Login</Link>
                         <Link to="/register" className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300">Sign Up</Link>

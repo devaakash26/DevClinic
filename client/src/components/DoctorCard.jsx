@@ -102,6 +102,11 @@ function DoctorCard({ doctor }) {
                 src={doctor.image || "/assets/profile.jpg"} 
                 alt={`Dr. ${doctor.firstname} ${doctor.lastname}`} 
                 className="relative w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg hover:border-blue-100 transition-all duration-300"
+                onError={(e) => {
+                  console.error("Failed to load doctor image:", doctor.image);
+                  e.target.onerror = null;
+                  e.target.src = "/assets/profile.jpg";
+                }}
               />
               {Math.random() > 0.3 && (
                 <div className="absolute -right-2 -bottom-1 bg-blue-600 text-white p-1 rounded-full border-2 border-white">

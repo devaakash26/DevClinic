@@ -54,6 +54,10 @@ var userSchema = new mongoose.Schema({
     },
     profilePicture: {
         type: String
+    },
+    welcomeEmailSent: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

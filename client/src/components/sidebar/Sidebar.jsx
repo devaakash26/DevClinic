@@ -100,6 +100,11 @@ const Sidebar = ({ collapseClass }) => {
         {
             name: "Patient Records",
             path: "/admin/patient-records",
+            icon: <FaIdCard className="w-5 h-5" />
+        },
+        {
+            name: "Medical Records",
+            path: "/admin/medical-records",
             icon: <FaNotesMedical className="w-5 h-5" />
         },
         {

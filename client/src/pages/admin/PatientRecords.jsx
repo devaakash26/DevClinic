@@ -18,6 +18,7 @@ import {
 import axios from 'axios';
 import moment from 'moment';
 import { Line, Pie } from '@ant-design/plots';
+import '../../styles/tableResponsive.css';
 
 const { TabPane } = Tabs;
 const { Search } = Input;
@@ -389,7 +390,7 @@ const PatientRecords = () => {
 
   return (
     <Layout>
-      <div className="patient-records-container">
+      <div className="patient-records-container p-4">
         <div className="header mb-6">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Patient Records Management</h1>
@@ -517,18 +518,22 @@ const PatientRecords = () => {
               </Select>
             </div>
             
-            <Table 
-              columns={columns} 
-              dataSource={filteredPatients} 
-              rowKey="_id"
-              pagination={{ 
-                pageSize: 10,
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '20', '50'],
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} patients` 
-              }}
-              loading={loading}
-            />
+            <Card className="mb-4">
+              <div className="responsive-table-container">
+                <Table
+                  columns={columns}
+                  dataSource={filteredPatients}
+                  rowKey="_id"
+                  loading={loading}
+                  pagination={{
+                    pageSize: 10,
+                    showTotal: (total) => `Total ${total} patients`
+                  }}
+                  scroll={{ x: 'max-content' }}
+                />
+                <div className="scroll-indicator">Scroll →</div>
+              </div>
+            </Card>
           </TabPane>
           
           <TabPane 

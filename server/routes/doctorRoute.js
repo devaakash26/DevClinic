@@ -1278,4 +1278,65 @@ router.post("/email-medical-record/:recordId", authMiddleware, async (req, res) 
   }
 });
 
+// Proxy upload to Cloudinary for fallback
+router.post("/proxy-upload-to-cloudinary", authMiddleware, async (req, res) => {
+    try {
+        const cloudinary = require('../cloudConfig/cloudinaryConfig');
+        
+        // Check if we have a file or base64 data
+        if (!req.body.image) {
+            return res.status(400).send({
+                success: false,
+                message: "No image data provided"
+            });
+        }
+        
+        const { image, userId } = req.body;
+        
+        // Upload to cloudinary directly
+        const uploadResult = await cloudinary.uploader.upload(image, {
+            folder: 'doctor_appointment_system/profile_pictures',
+            transformation: [{ width: 500, height: 500, crop: 'limit' }],
+            resource_type: 'auto'
+        });
+        
+        if (!uploadResult || !uploadResult.secure_url) {
+            return res.status(500).send({
+                success: false,
+                message: "Failed to upload image to Cloudinary"
+            });
+        }
+        
+        // If a userId is provided, update the doctor record
+        if (userId) {
+            const doctor = await Doctor.findOneAndUpdate(
+                { userId: userId },
+                { $set: { image: uploadResult.secure_url } },
+                { new: true }
+            );
+            
+            if (!doctor) {
+                // Still return success with the URL even if doctor not found
+                console.log("Doctor not found for userId:", userId);
+            }
+        }
+        
+        return res.status(200).send({
+            success: true,
+            message: "Image uploaded successfully",
+            data: {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id
+            }
+        });
+    } catch (error) {
+        console.error("Error in proxy upload to Cloudinary:", error);
+        res.status(500).send({
+            success: false,
+            message: "Server error during proxy upload",
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

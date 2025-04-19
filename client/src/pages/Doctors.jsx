@@ -6,6 +6,39 @@ import toast from 'react-hot-toast';
 import DoctorCard from '../components/DoctorCard';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
+import { detectUserLocation, INDIAN_STATES, INDIAN_CITIES_BY_STATE } from '../utils/locationUtils';
+
+// List of all medical departments
+const ALL_DEPARTMENTS = [
+  'Cardiology',
+  'Dermatology',
+  'Endocrinology',
+  'Gastroenterology',
+  'Gynecology',
+  'Hematology',
+  'Nephrology',
+  'Neurology',
+  'Oncology',
+  'Ophthalmology',
+  'Orthopedics',
+  'Otolaryngology',
+  'Pediatrics',
+  'Psychiatry',
+  'Pulmonology',
+  'Radiology',
+  'Rheumatology',
+  'Urology',
+  'General Medicine',
+  'General Surgery',
+  'Family Medicine',
+  'Internal Medicine',
+  'Emergency Medicine',
+  'Anesthesiology',
+  'Pathology',
+  'Physical Medicine',
+  'Rehabilitation',
+  'Dentistry'
+];
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -27,7 +60,7 @@ const Doctors = () => {
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedState, setSelectedState] = useState('');
   const [cities, setCities] = useState([]);
-  const [states, setStates] = useState([]);
+  const [states, setStates] = useState(INDIAN_STATES);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
 
@@ -61,64 +94,29 @@ const Doctors = () => {
     }
   }, []);
 
-  // Detect user's location
-  const detectUserLocation = () => {
-    setLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            // Use the OpenCage Geocoding API with the key from environment variables
-            const apiKey = process.env.REACT_APP_OPENCAGE_API_KEY;
-            
-            if (!apiKey) {
-              console.error('OpenCage API key is missing in environment variables');
-              toast.error('Location service configuration is missing');
-              setLoadingLocation(false);
-              return;
-            }
-            
-            const response = await axios.get(
-              `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`
-            );
-            
-            if (response.data && response.data.results && response.data.results.length > 0) {
-              const locationData = response.data.results[0].components;
-              const city = locationData.city || locationData.town || locationData.village || '';
-              const state = locationData.state || '';
-              
-              setUserLocation({
-                city,
-                state,
-                latitude,
-                longitude
-              });
-              
-              // Auto-set city and state filters
-              if (city) setSelectedCity(city);
-              if (state) setSelectedState(state);
-              setLocationEnabled(true);
-              
-              toast.success(`Location detected: ${city}, ${state}`);
-            } else {
-              toast.error('Unable to determine your location details');
-            }
-          } catch (error) {
-            console.error('Error fetching location details:', error);
-            toast.error('Failed to get location details');
-          } finally {
-            setLoadingLocation(false);
-          }
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          toast.error('Unable to access your location. Please allow location access or select manually.');
-          setLoadingLocation(false);
-        }
-      );
-    } else {
-      toast.error('Geolocation is not supported by your browser');
+  // Detect user's location - only when button is clicked
+  const handleDetectUserLocation = async () => {
+    try {
+      setLoadingLocation(true);
+      const locationData = await detectUserLocation();
+      
+      setUserLocation({
+        city: locationData.city,
+        state: locationData.state,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      });
+      
+      // Auto-set city and state filters
+      if (locationData.city) setSelectedCity(locationData.city);
+      if (locationData.state) setSelectedState(locationData.state);
+      setLocationEnabled(true);
+      
+      toast.success(`Location detected: ${locationData.city}, ${locationData.state}`);
+    } catch (error) {
+      console.error('Geolocation error:', error);
+      toast.error(error.message || 'Unable to access your location. Please allow location access or select manually.');
+    } finally {
       setLoadingLocation(false);
     }
   };
@@ -138,12 +136,10 @@ const Doctors = () => {
         setDoctors(approvedDoctors);
         setFilteredDoctors(approvedDoctors);
         
-        // Extract unique departments
-        const uniqueDepartments = [...new Set(approvedDoctors.map(doc => doc.department).filter(Boolean))];
-        setDepartments(uniqueDepartments);
-
-        // Extract unique cities and states from doctor addresses
-        extractLocationsFromDoctors(approvedDoctors);
+        // Extract unique departments from doctors and combine with ALL_DEPARTMENTS
+        const doctorDepartments = [...new Set(approvedDoctors.map(doc => doc.department).filter(Boolean))];
+        const allUniqueDepartments = [...new Set([...doctorDepartments, ...ALL_DEPARTMENTS])].sort();
+        setDepartments(allUniqueDepartments);
 
         // Set price range based on actual data
         const fees = approvedDoctors.map(doc => doc.feePerConsultation || 0);
@@ -174,45 +170,34 @@ const Doctors = () => {
     }
   };
 
-  // Extract city and state from doctor addresses
-  const extractLocationsFromDoctors = (doctors) => {
-    const citiesSet = new Set();
-    const statesSet = new Set();
+  // Update cities when state is selected
+  useEffect(() => {
+    if (selectedState) {
+      // Get cities for the selected state from our predefined list
+      setCities(INDIAN_CITIES_BY_STATE[selectedState] || []);
+      
+      // Reset the selected city when state changes
+      setSelectedCity('');
+    } else {
+      setCities([]);
+    }
+  }, [selectedState]);
 
-    doctors.forEach(doctor => {
-      if (doctor.address) {
-        // Try to parse address into components
-        const addressParts = doctor.address.split(',').map(part => part.trim());
-        
-        // Naive approach: assume last part might be state and second to last might be city
-        // This is just an example - in a real app, you'd use a better parsing strategy
-        if (addressParts.length >= 2) {
-          const potentialCity = addressParts[addressParts.length - 2];
-          const potentialState = addressParts[addressParts.length - 1];
-          
-          if (potentialCity && potentialCity.length > 2) citiesSet.add(potentialCity);
-          if (potentialState && potentialState.length > 2) statesSet.add(potentialState);
-        }
-      }
-    });
-
-    setCities(Array.from(citiesSet).sort());
-    setStates(Array.from(statesSet).sort());
-  };
+  // Gather unique states and cities from doctor data
+  useEffect(() => {
+    if (doctors.length > 0) {
+      // Extract unique states from doctors data
+      const doctorStates = [...new Set(doctors.map(doc => doc.state).filter(Boolean))];
+      
+      // Combine with predefined states and remove duplicates
+      const allStates = [...new Set([...doctorStates, ...INDIAN_STATES])].sort();
+      setStates(allStates);
+    }
+  }, [doctors]);
 
   useEffect(() => {
     fetchDoctors();
-    // Ask for location permission when the component mounts
-    const locationPermissionStatus = localStorage.getItem('locationPermissionAsked');
-    if (!locationPermissionStatus) {
-      // Delay the prompt slightly to improve user experience
-      setTimeout(() => {
-        if (confirm('Would you like to enable location-based doctor search?')) {
-          detectUserLocation();
-        }
-        localStorage.setItem('locationPermissionAsked', 'true');
-      }, 1000);
-    }
+    // No automatic location detection on page load
   }, []);
 
   // Filter and sort doctors
@@ -243,17 +228,22 @@ const Doctors = () => {
       // Availability filter
       const availabilityMatch = availableOnly ? doctor.isAvailable !== false : true;
       
-      // Location filter
+      // Location filter - using city and state fields directly
       let locationMatch = true;
       if (locationEnabled && (selectedCity || selectedState)) {
-        const address = doctor.address ? doctor.address.toLowerCase() : '';
+        const doctorCity = (doctor.city || '').toLowerCase();
+        const doctorState = (doctor.state || '').toLowerCase();
         
         if (selectedCity && selectedState) {
-          locationMatch = address.includes(selectedCity.toLowerCase()) && address.includes(selectedState.toLowerCase());
+          // Match both city and state
+          locationMatch = doctorCity === selectedCity.toLowerCase() && 
+                         doctorState === selectedState.toLowerCase();
         } else if (selectedCity) {
-          locationMatch = address.includes(selectedCity.toLowerCase());
+          // Match only city
+          locationMatch = doctorCity === selectedCity.toLowerCase();
         } else if (selectedState) {
-          locationMatch = address.includes(selectedState.toLowerCase());
+          // Match only state
+          locationMatch = doctorState === selectedState.toLowerCase();
         }
       }
       
@@ -399,7 +389,7 @@ const Doctors = () => {
                   </span>
                 </div>
                 <button 
-                  onClick={detectUserLocation}
+                  onClick={handleDetectUserLocation}
                   disabled={loadingLocation}
                   className={`px-3 py-1.5 rounded text-sm font-medium ${loadingLocation ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'} transition-all duration-200 flex items-center`}
                 >
@@ -479,7 +469,28 @@ const Doctors = () => {
                 </div>
               </div>
 
-              {/* Location filters */}
+              {/* Location filters - State dropdown */}
+              <div className="w-full md:w-1/5">
+                <div className="relative">
+                  <select
+                    value={selectedState}
+                    onChange={(e) => {
+                      setSelectedState(e.target.value);
+                      if (e.target.value) setLocationEnabled(true);
+                    }}
+                    className="appearance-none w-full px-4 py-3 pl-10 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  >
+                    <option value="">All States</option>
+                    {states.map((state, index) => (
+                      <option key={index} value={state}>{state}</option>
+                    ))}
+                  </select>
+                  <FaMapMarkerAlt className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FaChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+              
+              {/* City dropdown */}
               <div className="w-full md:w-1/5">
                 <div className="relative">
                   <select
@@ -489,7 +500,7 @@ const Doctors = () => {
                       if (e.target.value) setLocationEnabled(true);
                     }}
                     className="appearance-none w-full px-4 py-3 pl-10 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                    disabled={!locationEnabled && selectedCity === ''}
+                    disabled={!selectedState}
                   >
                     <option value="">All Cities</option>
                     {cities.map((city, index) => (
@@ -501,7 +512,7 @@ const Doctors = () => {
                 </div>
               </div>
               
-              <div className="flex gap-2 w-full md:w-1/5">
+              <div className="flex gap-2 w-full md:w-1/6">
                 <button 
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex-1 px-3 py-3 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-all duration-300 flex items-center justify-center text-sm"
@@ -541,6 +552,8 @@ const Doctors = () => {
                         value={selectedState}
                         onChange={(e) => {
                           setSelectedState(e.target.value);
+                          // Reset city when state changes
+                          setSelectedCity('');
                           if (e.target.value) setLocationEnabled(true);
                         }}
                         className="w-full p-2 text-sm border border-gray-200 rounded-md"
@@ -560,6 +573,7 @@ const Doctors = () => {
                           if (e.target.value) setLocationEnabled(true);
                         }}
                         className="w-full p-2 text-sm border border-gray-200 rounded-md"
+                        disabled={!selectedState} // Disable city selection until state is selected
                       >
                         <option value="">All Cities</option>
                         {cities.map((city, index) => (

@@ -13,7 +13,7 @@ const ApplyDoctor = () => {
     const [form] = Form.useForm();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const handleSubmit = async (values) => {
+    const handleSubmit = async (values, resetFormFn) => {
         try {
             setIsSubmitting(true);
             dispatch(showLoading());
@@ -62,18 +62,33 @@ const ApplyDoctor = () => {
                 }
             }
             
-            // Create a blob from the image URL (if it's a URL) and append it as a file
+            // Handle the image URL properly
             if (values.image) {
-                // Make sure we only use Cloudinary URLs and not base64 data
+                // Make sure we only use image URLs and not base64 data
                 if (values.image.startsWith('data:')) {
                     message.error('Please wait for image to finish uploading to Cloudinary');
                     dispatch(hideLoading());
                     setIsSubmitting(false);
                     return;
                 } else if (typeof values.image === 'string') {
-                    // It's a Cloudinary URL, pass it along
+                    // Log the image URL
+                    console.log("Using image URL:", values.image);
+                    
+                    // Check if it's a blob URL (temporary local URL)
+                    if (values.image.startsWith('blob:')) {
+                        message.error('Your image was not properly uploaded. Please try uploading again.');
+                        dispatch(hideLoading());
+                        setIsSubmitting(false);
+                        return;
+                    }
+                    
+                    // Add the image URL to formData properly using all possible field names
+                    // to ensure the server can find it regardless of which field it looks for
                     formData.append('imageUrl', values.image);
-                    console.log("Using Cloudinary URL:", values.image);
+                    formData.append('image', values.image);
+                    
+                    // Debug image URL
+                    console.log("Image URL included in submission:", values.image);
                 }
             } else {
                 message.error('Please upload your profile image');
@@ -109,7 +124,16 @@ const ApplyDoctor = () => {
                     text: 'Your application has been submitted successfully.',
                     icon: 'success',
                 });
-                form.resetFields();
+                
+                // Use the reset callback if available
+                if (resetFormFn && typeof resetFormFn === 'function') {
+                    console.log("Using provided reset callback");
+                    resetFormFn();
+                } else {
+                    // Fallback to regular form reset
+                    console.log("Using regular form reset");
+                    form.resetFields();
+                }
             } else {
                 console.error("Application failed:", response.data);
                 Swal.fire({

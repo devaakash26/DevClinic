@@ -62,19 +62,19 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
                                 <Button
                                     key={index}
                                     type={isSelected ? 'primary' : 'default'}
-                                    className={`date-button ${isToday ? 'today-button' : ''}`}
+                                    className={`date-button ${isToday ? 'today-button' : ''} w-full text-center px-1 py-2`}
                                     onClick={() => onDateSelect(date)}
                                     style={{ 
-                                        margin: '2px', 
                                         position: 'relative',
                                         borderColor: isToday ? '#52c41a' : undefined,
-                                        borderWidth: isToday ? '2px' : '1px'
+                                        borderWidth: isToday ? '2px' : '1px',
+                                        height: 'auto'
                                     }}
                                 >
                                     <div className="text-center">
-                                        <div>{date.format('ddd')}</div>
-                                        <div className="font-bold">{date.format('D')}</div>
-                                        <div className="text-xs">{date.format('MMM')}</div>
+                                        <div className="text-xs sm:text-sm">{date.format('ddd')}</div>
+                                        <div className="font-bold text-sm sm:text-base">{date.format('D')}</div>
+                                        <div className="text-xs hidden xs:block">{date.format('MMM')}</div>
                                     </div>
                                     {isToday && (
                                         <div style={{ 
@@ -83,7 +83,7 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
                                             right: '-8px', 
                                             background: '#52c41a', 
                                             borderRadius: '50%',
-                                            width: '36px',
+                                            width: '34px',
                                             height: '16px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1277,25 +1277,36 @@ function BookAppointment() {
     // Render time slots with availability indicators
     const renderTimeSlots = () => {
         if (slotsLoading) {
-    return (
-                <div className="flex flex-col justify-center items-center h-48 bg-gray-50 rounded-lg border border-gray-200">
-                    <Spin size="large" />
-                    <p className="mt-4 text-gray-600 font-medium">Checking available slots...</p>
-                    <p className="text-gray-500 text-sm mt-1">Please wait while we find open appointments</p>
+            return (
+                <div className="py-8 flex justify-center">
+                    <Spin size="large" tip="Loading available slots..." />
+                </div>
+            );
+        }
+
+        if (!selectedDate) {
+            return (
+                <div className="text-center py-8">
+                    <Alert
+                        message="Select a Date"
+                        description="Please select a date to see available appointment slots."
+                        type="info"
+                        showIcon
+                    />
                 </div>
             );
         }
 
         if (availableTimes.length === 0) {
             return (
-                <div className="text-center p-6 bg-gray-50 rounded-lg">
+                <div className="text-center py-4">
                     <Alert
                         message="No Available Slots"
                         description={
                             <div>
-                                <p>All slots are booked for this date. Please select another date or check our suggested available slots.</p>
-                                <Button 
-                                    type="primary" 
+                                <p className="mb-3">No appointment slots available for the selected date.</p>
+                                <Button
+                                    type="primary"
                                     onClick={() => setShowSuggestionsModal(true)}
                                     className="mt-3"
                                     disabled={suggestedSlots.length === 0}
@@ -1312,12 +1323,12 @@ function BookAppointment() {
         }
 
         return (
-            <div className="time-slots-container grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-4">
+            <div className="time-slots-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 sm:gap-2 mt-4">
                 {availableTimes.map((slot, index) => (
                     <Button
                         key={index}
                         type={selectedTime && selectedTime.format('HH:mm') === slot.time ? 'primary' : 'default'}
-                        className={`time-slot-button ${slot.available ? 'available' : 'unavailable'}`}
+                        className={`time-slot-button ${slot.available ? 'available' : 'unavailable'} text-xs sm:text-sm py-1 h-auto`}
                         onClick={() => handleTimeSelect(slot.moment)}
                         disabled={!slot.available}
                     >
@@ -1334,20 +1345,20 @@ function BookAppointment() {
             title: 'Date & Time',
             content: (
                 <div className="date-time-selection">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div className="calendar-container">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center">
                                 <CalendarOutlined className="mr-2 text-blue-500" />
                                 Select Date
                             </h3>
-                            <div className="bg-white p-6 rounded-lg shadow">
+                            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
                                 {/* Only use SimpleDateSelector for reliability */}
                                 <SimpleDateSelector 
                                     selectedDate={selectedDate}
                                     onDateSelect={handleDateSelect}
                                 />
                                 
-                                <div className="mt-4">
+                                <div className="mt-3">
                                     <Alert
                                         message="Note on Appointment Booking"
                                         description="Please select a date. For same-day appointments, only future time slots will be available."
@@ -1358,18 +1369,20 @@ function BookAppointment() {
                             </div>
                         </div>
                         
-                        <div className="time-selection">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <div className="time-selection mt-4 lg:mt-0">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center">
                                 <ClockCircleOutlined className="mr-2 text-blue-500" />
                                 Available Time Slots
-                                <span className="ml-2 text-sm font-normal text-gray-500">
-                                    {selectedDate?.format('MMMM D, YYYY')}
-                        </span>
+                                {selectedDate && (
+                                    <span className="ml-2 text-xs sm:text-sm font-normal text-gray-500">
+                                        {selectedDate?.format('MMMM D, YYYY')}
+                                    </span>
+                                )}
                             </h3>
                             
-                            <div className="bg-white p-6 rounded-lg shadow">
+                            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
                                 {/* Show only actual doctor's consulting hours, no defaults */}
-                                <div className="consulting-hours mb-4">
+                                <div className="consulting-hours mb-3">
                                     <p className="text-sm text-gray-500">Doctor's Consulting Hours</p>
                                     <p className="font-medium text-gray-700">
                                         {(() => {
@@ -1426,12 +1439,12 @@ function BookAppointment() {
                                     </p>
                                 </div>
                                 
-                                <Divider className="my-3" />
+                                <Divider className="my-2" />
                                 
                                 {renderTimeSlots()}
                                 
                                 {selectedTime && (
-                                    <div className="selected-slot mt-5">
+                                    <div className="selected-slot mt-4">
                                         <Alert
                                             message="Selected Time Slot"
                                             description={
@@ -1454,7 +1467,7 @@ function BookAppointment() {
             title: 'Patient Details',
             content: (
                 <div className="patient-details">
-                    <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
                         <h3 className="text-lg font-semibold mb-4 flex items-center">
                             <UserOutlined className="mr-2 text-blue-500" />
                             Appointment Details
@@ -1466,6 +1479,7 @@ function BookAppointment() {
                             initialValues={appointmentDetails}
                             onValuesChange={handleFormChange}
                             requiredMark={true}
+                            className="max-w-full"
                         >
                             <Form.Item
                                 name="reason"
@@ -1478,7 +1492,7 @@ function BookAppointment() {
                                 />
                             </Form.Item>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                 <Form.Item
                                     name="symptoms"
                                     label="Current Symptoms (if any)"
@@ -1500,17 +1514,17 @@ function BookAppointment() {
                                 </Form.Item>
                             </div>
                             
-                            <Divider>Communication Preferences</Divider>
+                            <Divider className="my-2 md:my-4">Communication Preferences</Divider>
                             
                             <Form.Item
                                 name="preferredCommunication"
                                 label="Preferred Communication Method"
                             >
-                                <Radio.Group size="large">
-                                    <Radio value="phone">
+                                <Radio.Group size="large" className="flex flex-wrap">
+                                    <Radio value="phone" className="min-w-[120px] mb-2">
                                         <PhoneOutlined className="mr-1" /> Phone
                                     </Radio>
-                                    <Radio value="email">
+                                    <Radio value="email" className="min-w-[120px] mb-2">
                                         <MessageOutlined className="mr-1" /> Email
                                     </Radio>
                                 </Radio.Group>
@@ -1546,182 +1560,110 @@ function BookAppointment() {
             title: 'Confirmation',
             content: (
                 <div className="confirmation">
-                    <div className="bg-white p-6 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-6 flex items-center">
-                            <CheckCircleOutlined className="mr-2 text-blue-500" />
-                            Review Appointment Details
+                    <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center">
+                            <CheckCircleOutlined className="mr-2 text-green-500" />
+                            Appointment Summary
                         </h3>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="doctor-info">
-                                <h4 className="text-md font-medium mb-3 flex items-center">
-                                    <MedicineBoxOutlined className="mr-2 text-blue-500" />
-                                    Doctor Information
-                                </h4>
-                                
-                                <Card className="bg-gray-50 hover:shadow-md transition-shadow duration-300">
-                                    <div className="flex items-center mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div>
+                                <Card title="Doctor Information" className="mb-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4">
                                         <img 
-                                            src={doctor?.image || "https://via.placeholder.com/100x100"}
+                                            src={doctor?.image || "https://via.placeholder.com/100x100"} 
                                             alt={`Dr. ${doctor?.firstname || 'Unknown'} ${doctor?.lastname || ''}`}
-                                            className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-full border-4 border-white shadow-md"
+                                            className="w-16 h-16 object-cover rounded-full mr-4 mb-2 sm:mb-0"
                                         />
                                         <div>
-                                            <div className="font-bold text-xl text-gray-800 mb-2">
-                                                Dr. {doctor?.firstname || 'Unknown'} {doctor?.lastname || 'Doctor'}
-                                            </div>
-                                            <div className="text-gray-600 mb-1">{(() => {
-                                                const specialization = doctor?.specialization;
-                                                if (!specialization) return 'General Practice';
-                                                
-                                                // If array, join with commas
-                                                if (Array.isArray(specialization)) {
-                                                    return specialization.join(', ');
-                                                }
-                                                
-                                                // If string but looks like array (has brackets)
-                                                if (typeof specialization === 'string') {
-                                                    if (specialization.startsWith('[') && specialization.endsWith(']')) {
-                                                        try {
-                                                            const parsed = JSON.parse(specialization);
-                                                            return Array.isArray(parsed) ? parsed.join(', ') : parsed;
-                                                        } catch (e) {
-                                                            // If can't parse, remove brackets manually
-                                                            return specialization.replace(/^\[|\]$/g, '').replace(/"/g, '');
-                                                        }
-                                                    }
-                                                    return specialization;
-                                                }
-                                                
-                                                return 'General Practice';
-                                            })()}</div>
+                                            <h4 className="text-base font-medium">Dr. {doctor?.firstname || 'Unknown'} {doctor?.lastname || ''}</h4>
+                                            <p className="text-sm text-gray-500">{doctor?.specialization || doctor?.department || 'Specialist'}</p>
+                                            <div className="mt-1 text-sm">{doctor?.experience || '0'} years experience</div>
                                         </div>
                                     </div>
-                                    <Divider className="my-2" />
-                                    <p className="text-gray-600"><strong>Qualifications:</strong> {doctor?.qualifications || 'Not specified'}</p>
-                                    <p className="text-gray-600"><strong>Fee:</strong> <span className="text-green-600 font-medium">₹{doctor?.feePerConsultation || 'Consultation fee'}</span></p>
-                                    {(doctor?.mobile || doctor?.phone) && (
-                                        <p className="text-gray-600">
-                                            <strong>Emergency Contact:</strong> {doctor?.mobile || doctor?.phone}
-                                        </p>
-                                    )}
+                                    
+                                    <div className="text-sm">
+                                        <p><strong>Consultation Fee:</strong> ₹{doctor?.feePerConsultation || 'Not specified'}</p>
+                                        <p><strong>Location:</strong> {doctor?.address || 'Not specified'}</p>
+                                    </div>
                                 </Card>
                                 
-                                {/* Testimonials section */}
-                                {testimonials.length > 0 && (
-                                    <div className="mt-4">
-                                        <h4 className="text-md font-medium mb-3 flex items-center">
-                                            <StarOutlined className="mr-2 text-yellow-500" />
-                                            Patient Reviews
-                                        </h4>
-                                        
-                                        <Card className="bg-gray-50 hover:shadow-md transition-shadow duration-300">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div>
-                                                    <Rate disabled defaultValue={parseFloat(testimonialStats.average)} allowHalf />
-                                                    <span className="ml-2 font-semibold">{testimonialStats.average}/5</span>
-                                                </div>
-                                                <div className="text-gray-500">
-                                                    {testimonialStats.total} {testimonialStats.total === 1 ? 'review' : 'reviews'}
-                                                </div>
-                                            </div>
-                                            
-                                            {testimonials.length > 0 && (
-                                                <List
-                                                    className="testimonial-list"
-                                                    itemLayout="horizontal"
-                                                    dataSource={testimonials}
-                                                    renderItem={item => (
-                                                        <List.Item>
-                                                            <TestimonialItem
-                                                                author={item.patientName || 'Anonymous Patient'}
-                                                                avatar={<Avatar>{(item.patientName || 'A')[0].toUpperCase()}</Avatar>}
-                                                                content={
-                                                                    <div>
-                                                                        <Rate disabled defaultValue={item.rating} />
-                                                                        <p className="mt-1 text-sm">{item.comment || 'Great experience with the doctor.'}</p>
-                                                                    </div>
-                                                                }
-                                                                 datetime={moment(item.createdAt).fromNow()}
-                                                            />
-                                                        </List.Item>
-                                                    )}
-                                                />
-                                            )}
-                                        </Card>
+                                <Card title="Appointment Details" className="mb-4 md:mb-0">
+                                    <div className="flex items-center mb-3">
+                                        <CalendarOutlined className="text-blue-500 mr-2" />
+                                        <span className="font-medium">{selectedDate?.format('dddd, MMMM D, YYYY')}</span>
                                     </div>
-                                )}
+                                    
+                                    <div className="flex items-center mb-3">
+                                        <ClockCircleOutlined className="text-blue-500 mr-2" />
+                                        <span className="font-medium">{selectedTime?.format('hh:mm A')}</span>
+                                    </div>
+                                    
+                                    <Alert
+                                        message="Payment Information"
+                                        description={
+                                            <div className="text-sm">
+                                                <p>Payment will be collected at the clinic.</p>
+                                                <p className="font-medium mt-1">Amount: ₹{doctor?.feePerConsultation || 'Consultation fee'}</p>
+                                            </div>
+                                        }
+                                        type="info"
+                                        showIcon
+                                        className="mt-3"
+                                    />
+                                </Card>
                             </div>
                             
-                            <div className="appointment-info">
-                                <h4 className="text-md font-medium mb-3 flex items-center">
-                                    <CalendarOutlined className="mr-2 text-blue-500" />
-                                    Appointment Details
-                                </h4>
-                                
-                                <Card className="bg-gray-50 hover:shadow-md transition-shadow duration-300">
-                                    <div className="mb-2">
-                                        <Tag color="blue" icon={<CalendarOutlined />} className="mr-0 mb-2">
-                                            {selectedDate?.format('dddd, MMMM D, YYYY')}
-                                        </Tag>
-                                        <Tag color="green" icon={<ClockCircleOutlined />} className="ml-2 mb-2">
-                                            {selectedTime?.format('hh:mm A')}
-                                        </Tag>
+                            <div>
+                                <Card title="Patient Information" className="mb-4">
+                                    <div className="mb-3">
+                                        <div className="text-sm text-gray-500">Patient Name</div>
+                                        <div className="font-medium">{user?.name}</div>
                                     </div>
-                                    <Divider className="my-2" />
-                                    <p className={!appointmentDetails.reason ? 'text-red-500 font-bold' : ''}>
-                                        <strong>Reason:</strong> {appointmentDetails.reason || 'Not provided (Required)'}
-                                    </p>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <div className="text-sm text-gray-500">Contact</div>
+                                            <div className="font-medium">{user?.phone || user?.mobile || 'Not provided'}</div>
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="text-sm text-gray-500">Email</div>
+                                            <div className="font-medium">{user?.email}</div>
+                                        </div>
+                                    </div>
+                                </Card>
+                                
+                                <Card title="Reason for Visit">
+                                    <div className="mb-3">
+                                        <div className="text-sm text-gray-500">Primary Reason</div>
+                                        <div className="font-medium">{appointmentDetails.reason || 'Not specified'}</div>
+                                    </div>
                                     
                                     {appointmentDetails.symptoms && (
-                                        <p><strong>Symptoms:</strong> {appointmentDetails.symptoms}</p>
+                                        <div className="mb-3">
+                                            <div className="text-sm text-gray-500">Symptoms</div>
+                                            <div>{appointmentDetails.symptoms}</div>
+                                        </div>
                                     )}
                                     
-                                    <p>
-                                        <strong>Communication:</strong> {appointmentDetails.preferredCommunication === 'phone' ? 'Phone' : 'Email'}
-                                    </p>
-                                    
-                                    {appointmentDetails.emergencyContact && (
-                                        <p><strong>Emergency Contact:</strong> {appointmentDetails.emergencyContact}</p>
+                                    {appointmentDetails.additionalNotes && (
+                                        <div>
+                                            <div className="text-sm text-gray-500">Additional Notes</div>
+                                            <div>{appointmentDetails.additionalNotes}</div>
+                                        </div>
                                     )}
                                 </Card>
                             </div>
                         </div>
                         
-                        <div className="mt-6">
-                            <Alert
-                                message="Important Information"
-                                description={
-                                    <div>
-                                        <p>By confirming this appointment, you agree to:</p>
-                                        <ul className="list-disc pl-5 mt-2">
-                                            <li>Arrive 15 minutes before your scheduled appointment time</li>
-                                            <li>Bring any relevant medical records or test results</li>
-                                            <li>Reschedule or cancel at least 24 hours in advance</li>
-                                            <li>Pay the consultation fee at the time of your appointment</li>
-                                        </ul>
-                                    </div>
-                                }
-                                type="info"
-                                showIcon
-                                className="mb-4"
-                            />
-                            
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <div className="flex items-start">
-                                    <InfoCircleOutlined className="text-yellow-500 text-lg mt-0.5 mr-2" />
-                                    <div>
-                                        <p className="font-medium text-yellow-700">Payment Information</p>
-                                        <p className="text-yellow-600">
-                                            {doctor?.feePerConsultation 
-                                                ? `The consultation fee of ₹${doctor.feePerConsultation} is payable at the clinic during your visit.` 
-                                                : 'The consultation fee will be payable at the clinic during your visit.'} 
-                                            We accept cash, credit/debit cards, and UPI payments.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <Alert
+                            message="Almost There!"
+                            description="Please review all details carefully before confirming your appointment. Once confirmed, a notification will be sent to the doctor."
+                            type="warning"
+                            showIcon
+                            className="mt-4"
+                        />
                     </div>
                 </div>
             ),
@@ -1901,14 +1843,14 @@ function BookAppointment() {
     return (
         <Layout>
             {loadingError ? (
-                <div className="flex flex-col items-center justify-center h-96 p-6 max-w-4xl mx-auto">
-                    <div className="text-center bg-red-50 p-8 rounded-lg shadow-md border border-red-200 mb-6 w-full">
-                        <div className="text-red-500 text-6xl mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex flex-col items-center justify-center h-96 p-4 sm:p-6 max-w-4xl mx-auto">
+                    <div className="text-center bg-red-50 p-4 sm:p-8 rounded-lg shadow-md border border-red-200 mb-6 w-full">
+                        <div className="text-red-500 text-4xl sm:text-6xl mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 sm:h-24 sm:w-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Doctor Information Not Available</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Doctor Information Not Available</h2>
                         <p className="text-gray-600 mb-4">{errorMessage || "We couldn't load the doctor's information. This could be due to a network issue or the doctor may not exist."}</p>
                         <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
                             <button
@@ -1931,24 +1873,24 @@ function BookAppointment() {
                     </div>
                 </div>
             ) : doctor ? (
-                <div className='p-4 max-w-6xl mx-auto'>
+                <div className='p-3 sm:p-4 max-w-6xl mx-auto'>
                     {/* Enhanced Hero Section */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-8">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-8">
                         <div className="flex flex-col md:flex-row md:items-center">
-                                <Button
+                            <Button
                                 icon={<ArrowLeftOutlined />} 
                                 onClick={() => navigate(-1)}
                                 className="self-start mb-4 md:mb-0 md:mr-6 bg-white hover:bg-gray-50"
-                                >
+                            >
                                 Back
-                                </Button>
+                            </Button>
                             
                             <div className="flex flex-col md:flex-row items-start md:items-center">
                                 <div className="doctor-image mr-6 mb-4 md:mb-0 relative">
                                     <img 
                                         src={doctor.image || "https://via.placeholder.com/100x100"}
                                         alt={`Dr. ${doctor.firstname} ${doctor.lastname}`}
-                                        className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-full border-4 border-white shadow-md"
+                                        className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 object-cover rounded-full border-4 border-white shadow-md"
                                     />
                                     {doctor.status === "approved" && (
                                         <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
@@ -1958,62 +1900,56 @@ function BookAppointment() {
                                 </div>
                                 
                                 <div>
-                                    <h1 className='text-2xl md:text-3xl font-bold text-gray-800 mb-1'>
+                                    <h1 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1'>
                                         Dr. {doctor.firstname} {doctor.lastname}
                                     </h1>
                                     <div className="flex flex-wrap items-center mb-2">
-                                        <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">
+                                        <span className="bg-blue-100 text-blue-800 text-xs sm:text-sm px-3 py-1 rounded-full mr-2 mb-2">
                                             {doctor.department || 'Specialist'}
                                         </span>
-                                        <span className="bg-indigo-100 text-indigo-800 text-sm px-3 py-1 rounded-full mr-2 mb-2">
+                                        <span className="bg-indigo-100 text-indigo-800 text-xs sm:text-sm px-3 py-1 rounded-full mr-2 mb-2">
                                             {doctor.experience || '0'} yrs exp
                                         </span>
                                         {doctor.qualifications && (
-                                            <span className="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full mb-2">
+                                            <span className="bg-purple-100 text-purple-800 text-xs sm:text-sm px-3 py-1 rounded-full mb-2">
                                                 {doctor.qualifications}
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-gray-600 text-sm md:text-base max-w-2xl">
+                                    <p className="text-gray-600 text-xs sm:text-sm max-w-2xl">
                                         {doctor.professionalBio || `Dr. ${doctor.firstname} ${doctor.lastname} is a dedicated healthcare professional with ${doctor.experience || 'several'} years of experience, providing quality medical care in ${doctor.department || 'their specialty'}.`}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 bg-white p-4 rounded-lg shadow-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6 bg-white p-3 sm:p-4 rounded-lg shadow-sm">
                             <div className="flex items-center">
-                                <div className="p-3 rounded-full bg-blue-50 mr-3">
-                                    <ClockCircleOutlined className="text-blue-500 text-xl" />
+                                <div className="p-2 sm:p-3 rounded-full bg-blue-50 mr-3">
+                                    <ClockCircleOutlined className="text-blue-500 text-base sm:text-xl" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Consulting Hours</p>
-                                    <p className="font-medium text-gray-700">
+                                    <p className="text-xs sm:text-sm text-gray-500">Consulting Hours</p>
+                                    <p className="font-medium text-sm sm:text-base text-gray-700">
                                         {(() => {
-                                            // First check if doctor exists
+                                            // (existing code to get consultation hours)
                                             if (!doctor) return 'Consultation hours not available';
                                             
-                                            // Extract the actual timing values using our helper function
                                             const timingValues = extractTimingValues(doctor.timing);
                                             
-                                            console.log("Extracted timing values:", timingValues);
-                                            
-                                            // If we couldn't extract valid timing values
                                             if (!timingValues || !Array.isArray(timingValues) || timingValues.length < 2) {
                                                 return 'Consultation hours not specified';
                                             }
                                             
-                                            // Extract and format times properly
                                             let startTimeStr = timingValues[0];
                                             let endTimeStr = timingValues[1];
                                             
-                                            // Handle ISO date strings (containing 'T')
                                             if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
-                                                startTimeStr = startTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
+                                                startTimeStr = startTimeStr.split('T')[1].substring(0, 5);
                                             }
                                             
                                             if (typeof endTimeStr === 'string' && endTimeStr.includes('T')) {
-                                                endTimeStr = endTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
+                                                endTimeStr = endTimeStr.split('T')[1].substring(0, 5);
                                             }
                                             
                                             // Handle empty or invalid time strings
@@ -2025,8 +1961,6 @@ function BookAppointment() {
                                             // Remove any quotes around the time strings
                                             startTimeStr = startTimeStr.replace(/"/g, '');
                                             endTimeStr = endTimeStr.replace(/"/g, '');
-                                            
-                                            console.log("Final timing strings:", { startTimeStr, endTimeStr });
                                             
                                             // Create moment objects with strict parsing to ensure they're valid
                                             const startTime = moment(startTimeStr, 'HH:mm', true);
@@ -2060,9 +1994,9 @@ function BookAppointment() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Emergency Contact</p>
-                                    {doctor.mobile ? (
-                                        <a href={`tel:${doctor.mobile}`} className="font-medium text-blue-600 hover:underline">
-                                            {doctor.mobile}
+                                    {doctor?.mobile ? (
+                                        <a href={`tel:${doctor?.mobile}`} className="font-medium text-blue-600 hover:underline">
+                                            {doctor?.mobile}
                                         </a>
                                     ) : (
                                         <p className="font-medium">Not available</p>

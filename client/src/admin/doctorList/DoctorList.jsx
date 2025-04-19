@@ -10,6 +10,7 @@ import { AiTwotoneDelete } from "react-icons/ai";
 import { FaSearch, FaEye, FaCheckCircle, FaTimesCircle, FaBan, FaEnvelope, FaPhone, FaUser, FaIdCard, FaUserMd, FaCalendarAlt, FaMoneyBillAlt, FaClock, FaFileExcel } from 'react-icons/fa';
 import { useSocket } from '../../context/SocketContext';
 import moment from 'moment';
+import '../../styles/tableResponsive.css';
 
 const { TabPane } = Tabs;
 
@@ -423,8 +424,9 @@ const DoctorList = () => {
         {
             title: "Actions",
             key: "actions",
+            className: "action-buttons-cell",
             render: (text, record) => (
-                <Space size="small">
+                <Space size="small" wrap>
                     <Button
                         type="primary"
                         icon={<FaEye />}
@@ -435,7 +437,7 @@ const DoctorList = () => {
                     </Button>
 
                     {record.status === "pending" && (
-                        <Space size="small">
+                        <Space size="small" wrap>
                             <Button
                                 type="primary"
                                 className="bg-success border-0"
@@ -584,17 +586,21 @@ const DoctorList = () => {
                     </Card>
                 </div>
 
-                <Table
-                    columns={columns}
-                    dataSource={filteredDoctors}
-                    rowKey="_id"
-                    loading={loading}
-                    pagination={{
-                        pageSize: 10,
-                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} doctors`,
-                    }}
-                    className="shadow-sm rounded-lg overflow-hidden"
-                />
+                <div className="responsive-table-container">
+                    <Table
+                        columns={columns}
+                        dataSource={filteredDoctors}
+                        rowKey="_id"
+                        loading={loading}
+                        pagination={{
+                            pageSize: 10,
+                            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} doctors`,
+                        }}
+                        className="shadow-sm rounded-lg overflow-hidden"
+                        scroll={{ x: 'max-content' }} 
+                    />
+                    <div className="scroll-indicator">Scroll →</div>
+                </div>
             </Card>
 
             {/* Doctor Details Modal */}

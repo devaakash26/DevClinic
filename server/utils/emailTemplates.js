@@ -652,6 +652,449 @@ exports.medicalRecordEmailTemplate = (patientName, medicalRecord, doctorName) =>
   `;
 };
 
+// Doctor Account Approved Template
+const doctorAccountApprovedTemplate = (doctorName) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Doctor Account Has Been Approved</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f9fafb;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .email-header {
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: #ffffff;
+        padding: 30px;
+        text-align: center;
+      }
+      .email-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .email-content {
+        padding: 30px;
+        background-color: #ffffff;
+      }
+      .email-footer {
+        background-color: #f9fafb;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .success-box {
+        background-color: #ecfdf5;
+        border-left: 4px solid #10b981;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .info-box {
+        background-color: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 25px 0;
+      }
+      .feature-item {
+        background-color: #f9fafb;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+      }
+      .feature-item h3 {
+        margin-top: 0;
+        color: #4f46e5;
+        font-size: 16px;
+      }
+      .check-icon {
+        color: #10b981;
+        font-size: 18px;
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-header">
+        <h1>DevClinic</h1>
+      </div>
+      <div class="email-content">
+        <h2>Congratulations! Your Doctor Account Has Been Approved</h2>
+        <p>Dear Dr. ${doctorName},</p>
+        
+        <div class="success-box">
+          <p><strong>Good news!</strong> Your application to join DevClinic as a healthcare provider has been reviewed and approved by our administrative team.</p>
+        </div>
+        
+        <p>We're thrilled to welcome you to our growing network of healthcare professionals. Your expertise and qualifications will be invaluable to our platform and the patients who seek quality healthcare services.</p>
+        
+        <div class="info-box">
+          <h3 style="margin-top: 0;">What's Next?</h3>
+          <p>You can now access your doctor dashboard to:
+            <ul>
+              <li>Complete your profile information</li>
+              <li>Set your availability hours</li>
+              <li>Manage appointment requests</li>
+              <li>Access patient medical records</li>
+            </ul>
+          </p>
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/doctor/profile" class="button">Access Your Dashboard</a>
+        </div>
+        
+        <h3>Key Features Available to You</h3>
+        <div class="feature-grid">
+          <div class="feature-item">
+            <h3>✓ Appointment Management</h3>
+            <p>Accept, reschedule or reject appointment requests</p>
+          </div>
+          <div class="feature-item">
+            <h3>✓ Patient Records</h3>
+            <p>Securely access and manage patient information</p>
+          </div>
+          <div class="feature-item">
+            <h3>✓ Availability Control</h3>
+            <p>Set your working hours and unavailable dates</p>
+          </div>
+          <div class="feature-item">
+            <h3>✓ Professional Profile</h3>
+            <p>Showcase your expertise and credentials</p>
+          </div>
+        </div>
+        
+        <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+        
+        <p>Best regards,<br/>The DevClinic Team</p>
+      </div>
+      <div class="email-footer">
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// Doctor Account Rejected Template
+const doctorAccountRejectedTemplate = (doctorName, rejectionReason) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update on Your Doctor Account Application</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f9fafb;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .email-header {
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: #ffffff;
+        padding: 30px;
+        text-align: center;
+      }
+      .email-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .email-content {
+        padding: 30px;
+        background-color: #ffffff;
+      }
+      .email-footer {
+        background-color: #f9fafb;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .notice-box {
+        background-color: #fff0f0;
+        border-left: 4px solid #ef4444;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .reason-box {
+        background-color: #f9fafb;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
+      }
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .help-section {
+        background-color: #f0f9ff;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 25px 0;
+      }
+      .help-section h3 {
+        margin-top: 0;
+        color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-header">
+        <h1>DevClinic</h1>
+      </div>
+      <div class="email-content">
+        <h2>Update on Your Doctor Account Application</h2>
+        <p>Dear Dr. ${doctorName},</p>
+        
+        <div class="notice-box">
+          <p>After careful review, we regret to inform you that your application to join DevClinic as a healthcare provider has not been approved at this time.</p>
+        </div>
+        
+        <div class="reason-box">
+          <h3>Reason for Decision:</h3>
+          <p>${rejectionReason || "Your application did not meet our current requirements for healthcare providers on our platform."}</p>
+        </div>
+        
+        <p>We understand this may be disappointing, but please know that this decision does not reflect on your professional capabilities or qualifications.</p>
+        
+        <div class="help-section">
+          <h3>What You Can Do Next</h3>
+          <p>You may address the concerns mentioned above and reapply in the future. Our requirements and needs evolve, and we welcome you to try again after addressing the feedback.</p>
+          <p>If you believe there has been a misunderstanding or would like to provide additional information, please contact our support team.</p>
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/contact" class="button">Contact Support</a>
+        </div>
+        
+        <p>We appreciate your interest in DevClinic and wish you the best in your professional endeavors.</p>
+        
+        <p>Best regards,<br/>The DevClinic Team</p>
+      </div>
+      <div class="email-footer">
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// Welcome email template sent on first login
+const welcomeEmailTemplate = (userName) => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to DevClinic</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f9fafb;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .email-header {
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: #ffffff;
+        padding: 30px;
+        text-align: center;
+      }
+      .email-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .email-content {
+        padding: 30px;
+        background-color: #ffffff;
+      }
+      .email-footer {
+        background-color: #f9fafb;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .welcome-banner {
+        background-color: #ecfdf5;
+        border-left: 4px solid #10b981;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 25px 0;
+      }
+      .feature-item {
+        background-color: #f9fafb;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+      }
+      .feature-item h3 {
+        margin-top: 0;
+        color: #4f46e5;
+        font-size: 16px;
+      }
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .signature {
+        margin-top: 30px;
+        font-style: italic;
+      }
+      .founder {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-header">
+        <h1>DevClinic</h1>
+      </div>
+      <div class="email-content">
+        <h2>Welcome to DevClinic!</h2>
+        <p>Dear ${userName},</p>
+        
+        <div class="welcome-banner">
+          <p><strong>Thank you for choosing DevClinic!</strong> We're thrilled to have you as part of our healthcare community.</p>
+        </div>
+        
+        <p>I wanted to personally welcome you to our platform and guide you through some of the key features that will help you make the most of your healthcare journey with us:</p>
+        
+        <div class="feature-grid">
+          <div class="feature-item">
+            <h3>🔍 Find Doctors</h3>
+            <p>Search for specialists by symptoms, specialization, or location</p>
+          </div>
+          <div class="feature-item">
+            <h3>📅 Book Appointments</h3>
+            <p>Schedule consultations at your convenience</p>
+          </div>
+          <div class="feature-item">
+            <h3>📋 Medical Records</h3>
+            <p>Access all your health information in one place</p>
+          </div>
+          <div class="feature-item">
+            <h3>💬 Consultations</h3>
+            <p>Connect with healthcare providers securely</p>
+          </div>
+        </div>
+        
+        <p>Getting started is easy:</p>
+        <ol>
+          <li>Complete your profile with your medical history for better care</li>
+          <li>Browse our network of qualified doctors</li>
+          <li>Book your first appointment</li>
+        </ol>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" class="button">Go to Dashboard</a>
+        </div>
+        
+        <p>If you have any questions or need assistance, our support team is always ready to help.</p>
+        
+        <div class="signature">
+          <p>Wishing you the best of health,</p>
+          <p class="founder">Aakash - CEO & Founder</p>
+          <p>DevClinic</p>
+        </div>
+      </div>
+      <div class="email-footer">
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
 module.exports = { 
   getEmailVerificationTemplate, 
   getPasswordResetTemplate,
@@ -662,5 +1105,8 @@ module.exports = {
   appointmentCompletedTemplate: exports.appointmentCompletedTemplate,
   doctorUnavailableAdminTemplate,
   doctorUnavailableConfirmationTemplate,
-  medicalRecordEmailTemplate: exports.medicalRecordEmailTemplate
+  medicalRecordEmailTemplate: exports.medicalRecordEmailTemplate,
+  doctorAccountApprovedTemplate,
+  doctorAccountRejectedTemplate,
+  welcomeEmailTemplate
 };

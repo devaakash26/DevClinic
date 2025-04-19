@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { getEmailVerificationTemplate, getPasswordResetTemplate, appointmentRequestedPatientTemplate, appointmentRequestedDoctorTemplate, appointmentApprovedTemplate, appointmentRejectedTemplate, appointmentCompletedTemplate, doctorUnavailableAdminTemplate, doctorUnavailableConfirmationTemplate, medicalRecordEmailTemplate } = require('./emailTemplates');
+const { getEmailVerificationTemplate, getPasswordResetTemplate, appointmentRequestedPatientTemplate, appointmentRequestedDoctorTemplate, appointmentApprovedTemplate, appointmentRejectedTemplate, appointmentCompletedTemplate, doctorUnavailableAdminTemplate, doctorUnavailableConfirmationTemplate, medicalRecordEmailTemplate, doctorAccountApprovedTemplate, doctorAccountRejectedTemplate, welcomeEmailTemplate } = require('./emailTemplates');
 
 // Create reusable transporter object using SMTP transport
 const createTransporter = () => {
@@ -74,7 +74,7 @@ const sendVerificationEmail = async (email, name, token) => {
     const transporter = createTransporter();
     
     // Generate verification link
-    const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email/${token}`;
+    const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${token}`;
     
     // Get HTML email template
     const htmlContent = getEmailVerificationTemplate(name, verificationLink);
@@ -107,7 +107,7 @@ const sendPasswordResetEmail = async (email, name, token) => {
     const transporter = createTransporter();
     
     // Generate reset link
-    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${token}?email=${email}`;
+    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${token}?email=${email}`;
     
     // Get HTML email template
     const htmlContent = getPasswordResetTemplate(name, resetLink);
@@ -414,6 +414,130 @@ const sendMedicalRecordToPatientEmail = async (patientEmail, patientName, medica
   return false;
 };
 
+/**
+ * Send doctor account approval notification email
+ * @param {string} doctorEmail - Doctor's email address
+ * @param {string} doctorName - Doctor's name
+ */
+const sendDoctorAccountApprovedEmail = async (doctorEmail, doctorName) => {
+  try {
+    // Validate and clean up email address
+    if (!doctorEmail || typeof doctorEmail !== 'string') {
+      console.error(`Invalid doctor email address: ${doctorEmail}`);
+      return false;
+    }
+    
+    // Trim whitespace and validate basic email format
+    const cleanedEmail = doctorEmail.trim();
+    if (!cleanedEmail.includes('@') || !cleanedEmail.includes('.')) {
+      console.error(`Doctor email has invalid format: ${cleanedEmail}`);
+      return false;
+    }
+    
+    console.log(`Attempting to send approval email to doctor: ${cleanedEmail}`);
+    
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: cleanedEmail,
+      subject: 'Congratulations! Your Doctor Account Has Been Approved - DevClinic',
+      html: doctorAccountApprovedTemplate(doctorName),
+      priority: 'high' // High priority for important notification
+    };
+
+    console.log(`Preparing to send approval email to doctor: ${cleanedEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Doctor account approval email sent: ${cleanedEmail}, messageId: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error sending doctor account approval email to ${doctorEmail}:`, error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      message: error.message
+    });
+    return false;
+  }
+};
+
+/**
+ * Send doctor account rejection notification email
+ * @param {string} doctorEmail - Doctor's email address
+ * @param {string} doctorName - Doctor's name
+ * @param {string} rejectionReason - Reason for the rejection
+ */
+const sendDoctorAccountRejectedEmail = async (doctorEmail, doctorName, rejectionReason) => {
+  try {
+    // Validate and clean up email address
+    if (!doctorEmail || typeof doctorEmail !== 'string') {
+      console.error(`Invalid doctor email address: ${doctorEmail}`);
+      return false;
+    }
+    
+    // Trim whitespace and validate basic email format
+    const cleanedEmail = doctorEmail.trim();
+    if (!cleanedEmail.includes('@') || !cleanedEmail.includes('.')) {
+      console.error(`Doctor email has invalid format: ${cleanedEmail}`);
+      return false;
+    }
+    
+    console.log(`Attempting to send rejection email to doctor: ${cleanedEmail}`);
+    
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: cleanedEmail,
+      subject: 'Update on Your Doctor Account Application - DevClinic',
+      html: doctorAccountRejectedTemplate(doctorName, rejectionReason),
+      priority: 'high' // High priority for important notification
+    };
+
+    console.log(`Preparing to send rejection email to doctor: ${cleanedEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Doctor account rejection email sent: ${cleanedEmail}, messageId: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error sending doctor account rejection email to ${doctorEmail}:`, error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      message: error.message
+    });
+    return false;
+  }
+};
+
+/**
+ * Send Welcome Email on first login
+ * @param {string} email - User's email address
+ * @param {string} name - User's name
+ */
+const sendWelcomeEmail = async (email, name) => {
+  try {
+    const transporter = createTransporter();
+    
+    // Get HTML email template
+    const htmlContent = welcomeEmailTemplate(name);
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: email,
+      subject: 'Welcome to DevClinic - Get Started Guide',
+      html: htmlContent,
+      text: `Hello ${name},\n\nWelcome to DevClinic! We're thrilled to have you join our healthcare community.\n\nHere's how to get started:\n1. Complete your profile\n2. Browse our network of doctors\n3. Book your first appointment\n\nIf you have any questions, our support team is here to help.\n\nWishing you the best of health,\nAakash - CEO & Founder\nDevClinic`
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Welcome email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    return false;
+  }
+};
+
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -424,5 +548,8 @@ module.exports = {
   sendAppointmentCompletedEmail,
   sendDoctorUnavailableEmailToAdmin,
   sendDoctorUnavailableConfirmationEmail,
-  sendMedicalRecordToPatientEmail
+  sendMedicalRecordToPatientEmail,
+  sendDoctorAccountApprovedEmail,
+  sendDoctorAccountRejectedEmail,
+  sendWelcomeEmail
 }; 

@@ -22,6 +22,7 @@ import LandingPage from './pages/LandingPage';
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import VerifyEmailNotice from "./pages/VerifyEmailNotice";
 import UserProfile from './pages/UserProfile';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
 import AppointmentsManagement from './pages/admin/AppointmentsManagement';
@@ -30,6 +31,7 @@ import PatientAppointments from './pages/patient/PatientAppointments';
 import DoctorMedicalRecords from './pages/DoctorMedicalRecords';
 import PatientMedicalRecords from './pages/patient/PatientMedicalRecords';
 import Contact from './pages/Contact';
+import AdminMedicalRecords from './pages/admin/AdminMedicalRecords';
 
 const App = () => {
   const { loading } = useSelector((state) => state.loading);
@@ -56,6 +58,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
+        <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
         
         {/* Home route - shows authenticated Home or LandingPage based on authentication */}
         <Route path="/home" element={
@@ -102,6 +105,7 @@ const AdminRoute = ({ user }) => {
       <Route path="doctor-application/:doctorId" element={<ProtectedRoute><DoctorApplicationReview /></ProtectedRoute>} />
       <Route path="appointments" element={<ProtectedRoute><AppointmentsManagement /></ProtectedRoute>} />
       <Route path="patient-records" element={<ProtectedRoute><PatientRecords /></ProtectedRoute>} />
+      <Route path="medical-records" element={<ProtectedRoute><AdminMedicalRecords /></ProtectedRoute>} />
       <Route path="*" element={<ProtectedRoute><Home /></ProtectedRoute>} />
     </Routes>
   );

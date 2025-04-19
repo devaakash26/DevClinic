@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import Layout from '../../components/Layout';
 import moment from 'moment';
+import '../../styles/tableResponsive.css';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -171,8 +172,9 @@ function AppointmentsManagement() {
     {
       title: 'Actions',
       key: 'actions',
+      className: 'action-buttons-cell',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           <Button 
             type="primary" 
             size="small" 
@@ -242,86 +244,74 @@ function AppointmentsManagement() {
 
   return (
     <Layout>
-      <div className="admin-appointments-container p-4">
-        <div className="header flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Appointments Management</h1>
-          <Button 
-            type="primary" 
-            icon={<SyncOutlined />} 
-            onClick={getAppointments}
-            loading={loading}
-          >
-            Refresh
-          </Button>
-        </div>
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Appointments Management</h1>
         
         {/* Stats Cards */}
-        <div className="stats-section mb-6">
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Total Appointments" 
-                  value={stats.total} 
-                  prefix={<PieChartOutlined />} 
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Pending" 
-                  value={stats.pending} 
-                  valueStyle={{ color: '#faad14' }}
-                  prefix={<ClockCircleOutlined />} 
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Approved" 
-                  value={stats.approved} 
-                  valueStyle={{ color: '#52c41a' }}
-                  prefix={<CheckCircleOutlined />} 
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Rejected" 
-                  value={stats.rejected} 
-                  valueStyle={{ color: '#f5222d' }}
-                  prefix={<CloseCircleOutlined />} 
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Completed" 
-                  value={stats.completed} 
-                  valueStyle={{ color: '#1890ff' }}
-                  prefix={<CheckCircleOutlined />} 
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={4}>
-              <Card>
-                <Statistic 
-                  title="Cancelled" 
-                  value={stats.cancelled} 
-                  valueStyle={{ color: '#8c8c8c' }}
-                  prefix={<CloseCircleOutlined />} 
-                />
-              </Card>
-            </Col>
-          </Row>
-        </div>
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Total Appointments" 
+                value={stats.total} 
+                prefix={<PieChartOutlined />} 
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Pending" 
+                value={stats.pending} 
+                valueStyle={{ color: '#faad14' }}
+                prefix={<ClockCircleOutlined />} 
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Approved" 
+                value={stats.approved} 
+                valueStyle={{ color: '#52c41a' }}
+                prefix={<CheckCircleOutlined />} 
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Rejected" 
+                value={stats.rejected} 
+                valueStyle={{ color: '#f5222d' }}
+                prefix={<CloseCircleOutlined />} 
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Completed" 
+                value={stats.completed} 
+                valueStyle={{ color: '#1890ff' }}
+                prefix={<CheckCircleOutlined />} 
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card>
+              <Statistic 
+                title="Cancelled" 
+                value={stats.cancelled} 
+                valueStyle={{ color: '#8c8c8c' }}
+                prefix={<CloseCircleOutlined />} 
+              />
+            </Card>
+          </Col>
+        </Row>
         
         {/* Filters */}
-        <div className="filters-section mb-4">
+        <Card className="mb-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="search-filter flex-1">
               <Search
@@ -360,7 +350,7 @@ function AppointmentsManagement() {
               </Select>
             </div>
           </div>
-        </div>
+        </Card>
         
         {/* Results info */}
         <div className="results-info mb-2">
@@ -370,19 +360,22 @@ function AppointmentsManagement() {
         </div>
         
         {/* Table */}
-        <div className="appointments-table">
-          <Table 
-            columns={columns} 
-            dataSource={filteredAppointments}
-            rowKey="_id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} appointments` 
-            }}
-          />
-        </div>
+        <Card>
+          <div className="responsive-table-container">
+            <Table 
+              columns={columns} 
+              dataSource={filteredAppointments}
+              loading={loading}
+              rowKey="_id"
+              pagination={{ 
+                pageSize: 10,
+                showTotal: (total) => `Total ${total} appointments`
+              }}
+              scroll={{ x: 'max-content' }}
+            />
+            <div className="scroll-indicator">Scroll →</div>
+          </div>
+        </Card>
       </div>
     </Layout>
   );
