@@ -50,7 +50,12 @@ app.use(cors(corsOptions));
       pingTimeout: 60000,
       pingInterval: 25000,
       cookie: false,
-      serveClient: false
+      serveClient: false,
+      connectTimeout: 45000,
+      perMessageDeflate: false,
+      httpCompression: false,
+      allowUpgrades: true,
+      destroyUpgrade: false
     });
 
     // Store active users
@@ -225,6 +230,76 @@ app.use(cors(corsOptions));
         environment: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
       });
+    });
+
+    // Add server health endpoint for Socket.IO
+    app.get('/socket.io', (req, res) => {
+      res.status(200).send('Socket.IO endpoint is ready.');
+    });
+
+    // Respond to Socket.IO handshake requests
+    app.options('/socket.io/*', (req, res) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.sendStatus(200);
+    });
+
+    // Socket.IO test route
+    app.get('/api/socket-test', (req, res) => {
+      res.status(200).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Socket.IO Test</title>
+          <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              const output = document.getElementById('output');
+              const serverUrl = '${process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:4000'}';
+              
+              log('Attempting to connect to: ' + serverUrl);
+              
+              const socket = io(serverUrl, {
+                path: '/socket.io/',
+                transports: ['websocket', 'polling'],
+                secure: true,
+                rejectUnauthorized: false,
+                reconnection: true,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 1000
+              });
+              
+              socket.on('connect', () => {
+                log('Connected to Socket.IO server. Socket ID: ' + socket.id);
+              });
+              
+              socket.on('connect_error', (err) => {
+                log('Connection Error: ' + err.message);
+                console.error('Error details:', err);
+              });
+              
+              socket.on('disconnect', (reason) => {
+                log('Disconnected: ' + reason);
+              });
+              
+              function log(message) {
+                const item = document.createElement('li');
+                item.textContent = message;
+                output.appendChild(item);
+                console.log(message);
+              }
+            });
+          </script>
+        </head>
+        <body>
+          <h1>Socket.IO Connection Test</h1>
+          <p>Server Environment: ${process.env.NODE_ENV || 'development'}</p>
+          <p>This page tests the Socket.IO connection to the server.</p>
+          <ul id="output"></ul>
+        </body>
+        </html>
+      `);
     });
 
     // Use server.listen instead of app.listen

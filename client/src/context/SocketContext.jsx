@@ -27,7 +27,7 @@ export const SocketProvider = ({ children }) => {
     
     // Initialize socket connection only once with reconnection options
     useEffect(() => {
-        console.log("Initializing socket connection...");
+        console.log("Initializing socket connection to:", SOCKET_URL);
         const newSocket = io(SOCKET_URL, {
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
@@ -35,10 +35,22 @@ export const SocketProvider = ({ children }) => {
             timeout: 20000,
             transports: ['websocket', 'polling'],
             path: '/socket.io/',
-            withCredentials: true,
+            withCredentials: false,
             forceNew: true,
             autoConnect: true,
-            reconnection: true
+            reconnection: true,
+            extraHeaders: {},
+            upgrade: true
+        });
+        
+        // Debug socket connection errors in detail
+        newSocket.on('connect_error', (err) => {
+            console.error('Socket.IO connection error details:', {
+                message: err.message,
+                description: err.description,
+                type: err.type,
+                stack: err.stack
+            });
         });
         
         setSocket(newSocket);
