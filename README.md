@@ -438,6 +438,88 @@ All email templates follow a consistent design pattern:
   - `CLIENT_URL`: Frontend URL
   - `PORT`: Backend server port
 
+### Environment Variables Reference
+
+The DevClinic application requires the following environment variables to be set up properly. Create a `.env` file in the server directory with these variables:
+
+```
+# Server Configuration
+PORT=4000
+NODE_ENV=development
+
+# Frontend URL (for CORS and email links)
+CLIENT_URL=http://localhost:5173
+
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/devclinic
+MONGODB_TEST_URI=mongodb://localhost:27017/devclinic_test
+
+# Authentication
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRY=7d
+# Email Configuration
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@example.com
+EMAIL_PASS=your_email_password
+EMAIL_FROM=noreply@devclinic.com
+EMAIL_FROM_NAME=DevClinic
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:4000/api/auth/google/callback
+
+# File Storage (Cloudinary)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Payment Gateway (if applicable)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Testing Configuration
+TEST_USER_EMAIL=test@example.com
+TEST_USER_PASSWORD=testpassword
+
+# Socket.io Configuration
+SOCKET_CORS_ORIGIN=http://localhost:5173
+```
+
+#### Required vs Optional Variables
+
+- **Required for basic functionality**:
+  - `PORT`, `NODE_ENV`, `CLIENT_URL`
+  - `MONGODB_URI`
+  - `JWT_SECRET`, `JWT_EXPIRY`
+  - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`
+
+- **Required for specific features**:
+  - Google OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
+  - File uploads: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+  - Payments: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
+  - Real-time notifications: `SOCKET_CORS_ORIGIN`
+
+#### Development vs Production
+
+In production environments, additional considerations apply:
+
+1. Use strong, unique secrets for `JWT_SECRET`, `COOKIE_SECRET`
+2. Set `NODE_ENV=production`
+3. Configure proper CORS settings with production URLs
+4. Use secure email credentials with appropriate rate limits
+5. Enable HTTPS for all endpoints
+
+#### Testing Environment
+
+For testing, the application uses separate configurations:
+
+1. `MONGODB_TEST_URI` points to a separate test database
+2. `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are used for API testing
+3. In test mode, email sending is typically mocked
+
 ## Getting Started
 
 ### Installation
