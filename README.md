@@ -19,93 +19,34 @@ DevClinic is a comprehensive healthcare platform that connects patients with doc
 
 ```
 DevClinic/
-├── client/                         # Frontend React application
-│   ├── public/                     # Static files
-│   │   ├── assets/                 # Images, icons, and other assets
-│   │   ├── index.html              # Main HTML file
-│   │   └── manifest.json           # PWA manifest
-│   ├── src/                        # React source code
-│   │   ├── api/                    # API service calls
-│   │   │   ├── auth.js             # Authentication API functions
-│   │   │   ├── appointments.js     # Appointment-related API functions
-│   │   │   └── doctor.js           # Doctor-related API functions
-│   │   ├── components/             # Reusable UI components
-│   │   │   ├── layout.jsx          # Layout components
-│   │   │   ├── DoctorCard.jsx      # Doctor information card
-│   │   │   ├── MedicalRecordsList.jsx  # Medical records display
-│   │   │   ├── MedicalRecordUpload.jsx # Upload component for records
-│   │   │   ├── sidebar/            # Sidebar navigation components
-│   │   │   └── payment/            # Payment related components
-│   │   ├── pages/                  # Page components
-│   │   │   ├── Home.jsx            # Homepage
-│   │   │   ├── Login.jsx           # Login/registration page
-│   │   │   ├── Appointments.jsx    # Appointment listings
-│   │   │   ├── BookAppointment.jsx # Appointment booking page
-│   │   │   └── VerifyEmail.jsx     # Email verification page
-│   │   ├── admin/                  # Admin dashboard components
-│   │   │   ├── Users.jsx           # User management
-│   │   │   ├── DoctorApplications.jsx # Doctor application approval
-│   │   │   └── Settings.jsx        # System settings
-│   │   ├── doctor/                 # Doctor dashboard components
-│   │   │   ├── AppointmentManagement.jsx # Manage appointments
-│   │   │   ├── PatientRecords.jsx  # Patient medical records
-│   │   │   ├── Availability.jsx    # Availability settings
-│   │   │   └── Profile.jsx         # Doctor profile management
-│   │   ├── patient/                # Patient dashboard components
-│   │   │   ├── MedicalRecords.jsx  # View medical records
-│   │   │   ├── Profile.jsx         # Patient profile management
-│   │   │   └── Feedback.jsx        # Submit doctor feedback
-│   │   ├── utils/                  # Utility functions
-│   │   │   ├── apiUtils.js         # API utility functions
-│   │   │   └── dateUtils.js        # Date handling utilities
-│   │   ├── services/               # Service layer for business logic
-│   │   │   ├── apiService.js       # API service configuration
-│   │   │   └── authService.js      # Authentication service
-│   │   ├── test/                   # Test files
-│   │   │   ├── setup.js            # Global test setup
-│   │   │   ├── components/         # Component tests
-│   │   │   │   ├── DoctorCard.test.jsx    # Tests for DoctorCard
-│   │   │   │   ├── MedicalRecordUpload.test.jsx  # Tests for upload component
-│   │   │   │   └── ProtectedRoute.test.jsx       # Tests for route protection
-│   │   │   ├── pages/              # Page component tests
-│   │   │   └── utils/              # Utility function tests
-│   │   ├── App.jsx                 # Main application component
-│   │   ├── index.jsx               # Entry point
-│   │   └── store/                  # Redux store configuration
-│   ├── package.json                # Frontend dependencies
-│   └── vite.config.js              # Vite configuration
-├── server/                         # Backend Node.js/Express application
-│   ├── cloudConfig/                # Configuration for cloud storage
-│   │   └── cloudinary.js           # Cloudinary setup for file storage
-│   ├── middleware/                 # Express middleware
-│   │   ├── authMiddleware.js       # Authentication middleware
-│   │   ├── errorHandler.js         # Global error handler
-│   │   └── validators.js           # Request validation middleware
-│   ├── models/                     # Mongoose data models
-│   │   ├── userModel.js            # User model
-│   │   ├── doctorModel.js          # Doctor model
-│   │   ├── appointmentModel.js     # Appointment model
-│   │   ├── medicalRecordModel.js   # Medical record model
-│   │   └── feedbackModel.js        # Feedback and ratings model
-│   ├── routes/                     # API routes
-│   │   ├── userRoutes.js           # User authentication and profile routes
-│   │   ├── doctorRoutes.js         # Doctor-specific routes
-│   │   ├── appointmentRoutes.js    # Appointment management routes
-│   │   └── adminRoutes.js          # Admin-specific routes
-│   ├── utils/                      # Utility functions and services
-│   │   ├── emailService.js         # Email sending service
-│   │   ├── emailTemplates.js       # Email templates
-│   │   └── tokenUtils.js           # JWT token utilities
-│   ├── tests/                      # Server-side tests
-│   │   ├── unit/                   # Unit tests
-│   │   └── integration/            # API integration tests
-│   ├── app.js                      # Express app setup
-│   ├── server.js                   # Server entry point
-│   └── package.json                # Backend dependencies
-├── .env.example                    # Example environment variables
-├── .gitignore                      # Git ignore rules
-├── package.json                    # Root package.json for scripts
-└── README.md                       # Project documentation
+├── client/                      # Frontend React application
+│   ├── public/                  # Static files and assets
+│   └── src/                     # React source code
+│       ├── api/                 # API service calls
+│       ├── components/          # Reusable UI components
+│       │   ├── sidebar/         # Sidebar navigation components
+│       │   └── payment/         # Payment related components
+│       ├── pages/               # Page components
+│       ├── admin/               # Admin dashboard components
+│       ├── doctor/              # Doctor dashboard components
+│       ├── patient/             # Patient dashboard components
+│       ├── utils/               # Utility functions
+│       ├── services/            # Service layer for business logic
+│       ├── test/                # Test files
+│       │   ├── components/      # Component tests
+│       │   ├── pages/           # Page component tests
+│       │   └── utils/           # Utility function tests
+│       └── store/               # Redux store configuration
+├── server/                      # Backend Node.js/Express application
+│   ├── cloudConfig/             # Configuration for cloud storage
+│   ├── middleware/              # Express middleware
+│   ├── models/                  # Mongoose data models
+│   ├── routes/                  # API routes
+│   ├── utils/                   # Utility functions and services
+│   └── tests/                   # Server-side tests
+│       ├── unit/                # Unit tests
+│       └── integration/         # API integration tests
+└── docs/                        # Documentation files
 ```
 
 ## Core Features
