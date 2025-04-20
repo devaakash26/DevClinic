@@ -471,4 +471,230 @@ All email templates follow a consistent design pattern:
 
 ## License
 
-This project is proprietary and confidential. Unauthorized copying, distribution, or use is prohibited. 
+This project is proprietary and confidential. Unauthorized copying, distribution, or use is prohibited.
+
+## Testing Framework
+
+DevClinic implements a comprehensive testing strategy to ensure code quality, reliability, and a smooth user experience. The project leverages modern testing tools and methodologies for both frontend and backend components.
+
+### Testing Stack
+
+- **Testing Library**: Vitest with React Testing Library
+- **Coverage Reports**: V8 for code coverage analytics
+- **Component Testing**: Unit and integration tests for React components
+- **API Testing**: Backend API endpoint testing with supertest
+- **Mock Data**: Fixtures and mock services for consistent test environments
+
+### Test Structure
+
+```
+DevClinic/
+├── client/                          # Frontend React application
+│   ├── src/                         
+│       ├── test/                    # Test directory
+│           ├── setup.js             # Global test setup
+│           ├── components/          # Component tests
+│           ├── pages/               # Page tests
+│           ├── hooks/               # Custom hooks tests
+│           └── utils/               # Utility function tests
+├── server/                          # Backend Node.js/Express application
+    ├── tests/                       
+        ├── unit/                    # Unit tests for backend functions
+        ├── integration/             # API integration tests
+        ├── fixtures/                # Test data fixtures
+        └── setup.js                 # Test environment setup
+```
+
+### Frontend Testing (Client)
+
+The frontend tests are located in `client/src/test/` and are organized to mirror the application structure. Each test file focuses on a specific component, page, or utility function.
+
+#### Test Categories
+
+Our frontend testing approach divides tests into key categories:
+
+1. **Unit Tests**: Verify that individual components and functions work correctly in isolation.
+2. **Integration Tests**: Test how components interact with each other and external services.
+3. **Performance Tests**: Ensure components render efficiently within specified time constraints.
+4. **Security Tests**: Validate that components handle sensitive data appropriately.
+
+#### Component Test Structure
+
+Each component test file follows a consistent structure:
+
+```javascript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import ComponentName from '../../components/ComponentName';
+
+describe('ComponentName Tests', () => {
+  // Unit Tests
+  describe('Unit Tests', () => {
+    it('should render correctly', () => {
+      // Test component rendering
+    });
+    
+    it('should handle user interactions', () => {
+      // Test button clicks, form submissions, etc.
+    });
+  });
+
+  // Integration Tests
+  describe('Integration Tests', () => {
+    it('should work with Redux store', () => {
+      // Test component with Redux integration
+    });
+  });
+
+  // Performance Tests
+  describe('Performance Tests', () => {
+    it('should render within performance budget', () => {
+      // Test rendering performance
+    });
+  });
+
+  // Security Tests
+  describe('Security Tests', () => {
+    it('should not expose sensitive data', () => {
+      // Test proper handling of sensitive information
+    });
+  });
+});
+```
+
+#### Test Setup
+
+The global test setup in `client/src/test/setup.js` configures the testing environment:
+
+```javascript
+import '@testing-library/jest-dom';
+import { expect, afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Add custom matchers
+expect.extend(matchers);
+
+// Mock browser APIs that might not be available in test environment
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Clean up after each test
+afterEach(() => {
+  cleanup();
+});
+```
+
+#### Testing External Dependencies
+
+For components that use external dependencies (APIs, Redux, etc.), we implement mocks:
+
+```javascript
+// Mock Redux store
+const createMockStore = (initialState = {}) => {
+  return configureStore({
+    reducer: {
+      user: (state = { user: null }, action) => {
+        // Mock reducer logic
+      },
+    },
+    preloadedState: initialState,
+  });
+};
+
+// Mock API calls
+vi.mock('axios');
+vi.mock('../../utils/apiUtils', () => ({
+  api: { 
+    post: vi.fn(),
+    get: vi.fn()
+  }
+}));
+```
+
+#### Running Tests
+
+Frontend tests can be run with:
+
+```bash
+# Run all tests
+cd client
+npm test
+
+# Run tests with coverage report
+npm test -- --coverage
+
+# Run specific test file
+npm test -- src/test/components/ComponentName.test.jsx
+```
+
+### Backend Testing (Server)
+
+Backend tests focus on API endpoints, data models, and utility functions. They ensure the server responds correctly to different requests and handles edge cases appropriately.
+
+#### Test Categories
+
+1. **Unit Tests**: Focus on individual functions and middleware.
+2. **Integration Tests**: Test complete API flows across multiple endpoints.
+3. **Model Tests**: Validate data models, schemas, and validators.
+4. **Authentication Tests**: Ensure proper protection of routes and resources.
+
+#### Example API Test
+
+```javascript
+const request = require('supertest');
+const app = require('../app');
+const mongoose = require('mongoose');
+const User = require('../models/userModel');
+
+describe('User API', () => {
+  beforeAll(async () => {
+    // Set up test database connection
+  });
+
+  afterAll(async () => {
+    // Clean up test database
+  });
+
+  it('should register a new user', async () => {
+    const response = await request(app)
+      .post('/api/user/register')
+      .send({
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'securepassword',
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toContain('registered successfully');
+  });
+});
+```
+
+### Continuous Integration
+
+Tests are integrated into our CI/CD pipeline to ensure code quality before deployment:
+
+1. **Pre-commit Hooks**: Run tests related to changed files.
+2. **CI Pipeline**: Run complete test suite on pull requests.
+3. **Coverage Reports**: Generate and track test coverage metrics.
+
+### Best Practices for Testing
+
+1. **Isolate Tests**: Each test should be independent with no shared state.
+2. **Mock External Dependencies**: Use mocks for APIs, databases, and third-party services.
+3. **Test User Workflows**: Focus on key user journeys through the application.
+4. **Avoid Implementation Details**: Test behavior, not implementation.
+5. **Maintain Test Data**: Keep test fixtures updated as the application evolves.
+
+With this comprehensive testing approach, DevClinic maintains high code quality and reliability even as the codebase grows and evolves. 

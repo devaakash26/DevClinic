@@ -22,6 +22,7 @@ function DoctorCard({ doctor }) {
 
   // Format fee with commas
   const formatFee = (fee) => {
+    if (fee === undefined || fee === null) return "0";
     return fee.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 

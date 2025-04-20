@@ -22,21 +22,22 @@ const createTransporter = () => {
   // Common retry options for connection resilience
   const transporterOptions = {
     pool: true, // Use connection pool
-    maxConnections: 5,
-    maxMessages: 100,
+    maxConnections: 3,
+    maxMessages: 50,
     rateDelta: 1000,
-    rateLimit: 5, // Limit to 5 messages per second
-    socketTimeout: 30000, // 30 seconds timeout
-    connectionTimeout: 30000, // 30 seconds connection timeout
+    rateLimit: 3, // Limit to 3 messages per second (reduced from 5)
+    socketTimeout: 60000, // 60 seconds timeout (increased from 30)
+    connectionTimeout: 60000, // 60 seconds connection timeout (increased from 30)
   };
   
   // Gmail specific configuration
   if (host.includes('gmail')) {
-    console.log('Using Gmail specific configuration');
+    console.log('Using Gmail specific configuration with port:', port);
     return nodemailer.createTransport({
+      service: 'gmail',
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
+      port: parseInt(port, 10),
+      secure: port == 465, // Use SSL only if port is 465
       auth: {
         user,
         pass
@@ -70,30 +71,71 @@ const createTransporter = () => {
  * @param {string} token - Verification token
  */
 const sendVerificationEmail = async (email, name, token) => {
-  try {
-    const transporter = createTransporter();
-    
-    // Generate verification link
-    const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${token}`;
-    
-    // Get HTML email template
-    const htmlContent = getEmailVerificationTemplate(name, verificationLink);
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
-      to: email,
-      subject: 'Verify Your DevClinic Account',
-      html: htmlContent,
-      text: `Hello ${name},\n\nPlease verify your email by clicking on the following link: ${verificationLink}\n\nThis link will expire in 24 hours.\n\nThank you,\nThe DevClinic Team`
-    };
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', info.messageId);
-    return true;
-  } catch (error) {
-    console.error('Error sending verification email:', error);
+  // Validate and clean up email address
+  if (!email || typeof email !== 'string') {
+    console.error(`Invalid email address: ${email}`);
     return false;
   }
+  
+  // Trim whitespace and validate basic email format
+  const cleanedEmail = email.trim();
+  if (!cleanedEmail.includes('@') || !cleanedEmail.includes('.')) {
+    console.error(`Email has invalid format: ${cleanedEmail}`);
+    return false;
+  }
+  
+  console.log(`Attempting to send verification email to: ${cleanedEmail}`);
+  
+  // Set up retry logic
+  const maxRetries = 3;
+  let retryCount = 0;
+  let lastError = null;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const transporter = createTransporter();
+      
+      // Generate verification link
+      const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${token}`;
+      
+      // Get HTML email template
+      const htmlContent = getEmailVerificationTemplate(name, verificationLink);
+      
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+        to: cleanedEmail,
+        subject: 'Verify Your DevClinic Account',
+        html: htmlContent,
+        text: `Hello ${name},\n\nPlease verify your email by clicking on the following link: ${verificationLink}\n\nThis link will expire in 24 hours.\n\nThank you,\nThe DevClinic Team`,
+        priority: 'high'
+      };
+      
+      console.log(`Mail options prepared for verification email (attempt ${retryCount + 1}): ${cleanedEmail}`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Verification email sent to: ${cleanedEmail}, messageId: ${info.messageId}`);
+      return true;
+    } catch (error) {
+      lastError = error;
+      retryCount++;
+      console.error(`Error sending verification email (attempt ${retryCount}):`, error.message);
+      
+      // If we still have retries left, wait before trying again
+      if (retryCount < maxRetries) {
+        console.log(`Retrying in ${retryCount * 2} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+      }
+    }
+  }
+  
+  // If we get here, all retries failed
+  console.error(`Failed to send verification email after ${maxRetries} attempts. Last error:`, lastError);
+  console.error('Error details:', {
+    code: lastError.code,
+    command: lastError.command,
+    responseCode: lastError.responseCode,
+    message: lastError.message
+  });
+  return false;
 };
 
 /**
