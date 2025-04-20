@@ -14,6 +14,12 @@ DevClinic is a comprehensive healthcare platform that connects patients with doc
 - **File Storage**: Cloud-based storage for medical records
 - **Third-party Authentication**: Google OAuth
 - **Real-time Notifications**: Socket.io
+- **Testing**:
+  - **Frontend Testing**: Vitest, React Testing Library, jsdom
+  - **Backend Testing**: Supertest, Jest
+  - **Test Coverage**: V8 Coverage
+  - **UI Component Testing**: Testing Library
+  - **Mocking**: Vitest mocking utilities
 
 ## Project Structure
 
