@@ -1,4 +1,4 @@
-# DevClinic - Healthcare Platform -- Hello
+# DevClinic - Healthcare Platform 
 
 ## Project Overview
 
