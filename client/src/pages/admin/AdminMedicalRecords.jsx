@@ -127,7 +127,6 @@ const AdminMedicalRecords = () => {
         
         // Calculate statistics
         calculateStats(fetchedRecords);
-        message.success('Medical records loaded successfully');
       } else {
         message.error(response.data.message || 'Failed to load medical records');
       }

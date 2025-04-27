@@ -73,6 +73,7 @@ app.use('/api/user', ...withDb(require('./routes/userRoute')));
 app.use('/api/admin', ...withDb(require('./routes/adminRoute')));
 app.use('/api/doctor', ...withDb(require('./routes/doctorRoute')));
 app.use('/api/support', ...withDb(require('./routes/supportRoute')));
+app.use('/api/payment', ...withDb(require('./routes/paymentRoutes')));
 
 // Catch-all route
 app.use('*', (req, res) => {

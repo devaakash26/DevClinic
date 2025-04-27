@@ -8,24 +8,28 @@ import { hideLoading, showLoading } from '../redux/loader';
 import { Button, DatePicker, Steps, Form, Input, Card, Radio, Alert, Spin, Divider, Modal, Badge, Calendar, Tag, Rate, Avatar, List, Typography, Empty, Tooltip } from 'antd';
 import Swal from 'sweetalert2';
 import moment from "moment";
-import { 
-    UserOutlined, 
-    CalendarOutlined, 
-    ClockCircleOutlined, 
-    CheckCircleOutlined, 
-    MedicineBoxOutlined, 
-    PhoneOutlined, 
+import {
+    UserOutlined,
+    CalendarOutlined,
+    ClockCircleOutlined,
+    CheckCircleOutlined,
+    MedicineBoxOutlined,
+    PhoneOutlined,
     MessageOutlined,
     CheckOutlined,
     CloseOutlined,
     InfoCircleOutlined,
     ArrowLeftOutlined,
     StarOutlined,
-    LikeOutlined
+    LikeOutlined,
+    WalletOutlined,
+    CreditCardOutlined,
+    LockOutlined
 } from '@ant-design/icons';
 import { api, apiFetch } from '../utils/apiUtils';
 import { getApiUrl } from '../services/apiService';
 import API_ENDPOINTS from '../services/apiConfig';
+import RazorpayCheckout from '../components/RazorpayCheckout';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -35,12 +39,12 @@ const { Title, Text, Paragraph } = Typography;
 const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
     const dates = [];
     const today = moment().startOf('day');
-    
+
     // Generate next 30 days (more range for selection)
     for (let i = 0; i < 30; i++) {
         dates.push(moment(today).add(i, 'days'));
     }
-    
+
     // Group dates by month for better organization
     const datesByMonth = {};
     dates.forEach(date => {
@@ -50,7 +54,7 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
         }
         datesByMonth[monthKey].push(date);
     });
-    
+
     return (
         <div className="simple-date-selector mb-4">
             {Object.keys(datesByMonth).map(monthKey => (
@@ -60,14 +64,14 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
                         {datesByMonth[monthKey].map((date, index) => {
                             const isSelected = selectedDate && date.format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD');
                             const isToday = date.format('YYYY-MM-DD') === today.format('YYYY-MM-DD');
-                            
+
                             return (
                                 <Button
                                     key={index}
                                     type={isSelected ? 'primary' : 'default'}
                                     className={`date-button ${isToday ? 'today-button' : ''} w-full text-center px-1 py-2`}
                                     onClick={() => onDateSelect(date)}
-                                    style={{ 
+                                    style={{
                                         position: 'relative',
                                         borderColor: isToday ? '#52c41a' : undefined,
                                         borderWidth: isToday ? '2px' : '1px',
@@ -80,11 +84,11 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
                                         <div className="text-xs hidden xs:block">{date.format('MMM')}</div>
                                     </div>
                                     {isToday && (
-                                        <div style={{ 
-                                            position: 'absolute', 
-                                            top: '-8px', 
-                                            right: '-8px', 
-                                            background: '#52c41a', 
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '-8px',
+                                            right: '-8px',
+                                            background: '#52c41a',
                                             borderRadius: '50%',
                                             width: '34px',
                                             height: '16px',
@@ -110,25 +114,25 @@ const SimpleDateSelector = ({ selectedDate, onDateSelect }) => {
 // Add a utility function to properly format time display
 const formatDisplayTime = (timeStr) => {
     if (!timeStr) return 'N/A';
-    
+
     try {
         // Handle ISO date strings (containing 'T')
         if (typeof timeStr === 'string' && timeStr.includes('T')) {
             return moment(timeStr).format('hh:mm A');
         }
-        
+
         // Handle HH:mm format
         if (typeof timeStr === 'string' && timeStr.match(/^\d{2}:\d{2}$/)) {
             // Direct parsing without conversion to ensure original time is preserved
             return moment(timeStr, 'HH:mm').format('hh:mm A');
         }
-        
+
         // Fallback - try to parse whatever format it is
         const parsed = moment(timeStr);
         if (parsed.isValid()) {
             return parsed.format('hh:mm A');
         }
-        
+
         return timeStr; // Return as is if nothing else works
     } catch (error) {
         console.error("Error formatting time:", error, timeStr);
@@ -138,85 +142,85 @@ const formatDisplayTime = (timeStr) => {
 
 // Create a custom TestimonialItem component to use instead of Comment
 const TestimonialItem = ({ author, content, datetime, avatar }) => {
-  return (
-    <div className="flex items-start space-x-4 mb-4">
-      <div className="flex-shrink-0">
-        {avatar || (
-          <Avatar size={40}>
-            {author && author !== 'Anonymous Patient' 
-              ? author.charAt(0).toUpperCase() 
-              : 'A'}
-          </Avatar>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <Typography.Text strong className="text-gray-800">
-            {author || 'Anonymous Patient'}
-          </Typography.Text>
-          <Typography.Text type="secondary" className="text-xs">
-            {datetime}
-          </Typography.Text>
+    return (
+        <div className="flex items-start space-x-4 mb-4">
+            <div className="flex-shrink-0">
+                {avatar || (
+                    <Avatar size={40}>
+                        {author && author !== 'Anonymous Patient'
+                            ? author.charAt(0).toUpperCase()
+                            : 'A'}
+                    </Avatar>
+                )}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                    <Typography.Text strong className="text-gray-800">
+                        {author || 'Anonymous Patient'}
+                    </Typography.Text>
+                    <Typography.Text type="secondary" className="text-xs">
+                        {datetime}
+                    </Typography.Text>
+                </div>
+                <div>{content}</div>
+            </div>
         </div>
-        <div>{content}</div>
-      </div>
-    </div>
-  );
+    );
 };
 
 // Helper function to extract actual timing values from potentially nested arrays/strings
 const extractTimingValues = (timing) => {
-  console.log("Extracting timing from:", timing);
-  
-  if (!timing) return null;
-  
-  try {
-    // If timing is a string that looks like JSON array
-    if (typeof timing === 'string' && (timing.startsWith('[') || timing.startsWith('\"['))) {
-      // Parse once or twice as needed
-      let parsedTiming = timing;
-      
-      // First parse if it's a JSON string
-      try {
-        parsedTiming = JSON.parse(timing);
-        console.log("First level parse:", parsedTiming);
-      } catch (e) {
-        console.log("First level parse failed:", e.message);
-      }
-      
-      // If it's still a string that looks like an array, parse again
-      if (typeof parsedTiming === 'string' && parsedTiming.startsWith('[')) {
-        try {
-          parsedTiming = JSON.parse(parsedTiming);
-          console.log("Second level parse:", parsedTiming);
-        } catch (e) {
-          console.log("Second level parse failed:", e.message);
+    console.log("Extracting timing from:", timing);
+
+    if (!timing) return null;
+
+    try {
+        // If timing is a string that looks like JSON array
+        if (typeof timing === 'string' && (timing.startsWith('[') || timing.startsWith('\"['))) {
+            // Parse once or twice as needed
+            let parsedTiming = timing;
+
+            // First parse if it's a JSON string
+            try {
+                parsedTiming = JSON.parse(timing);
+                console.log("First level parse:", parsedTiming);
+            } catch (e) {
+                console.log("First level parse failed:", e.message);
+            }
+
+            // If it's still a string that looks like an array, parse again
+            if (typeof parsedTiming === 'string' && parsedTiming.startsWith('[')) {
+                try {
+                    parsedTiming = JSON.parse(parsedTiming);
+                    console.log("Second level parse:", parsedTiming);
+                } catch (e) {
+                    console.log("Second level parse failed:", e.message);
+                }
+            }
+
+            // Now we should have an array
+            if (Array.isArray(parsedTiming) && parsedTiming.length >= 2) {
+                return [parsedTiming[0], parsedTiming[1]];
+            } else if (Array.isArray(parsedTiming) && parsedTiming.length === 1 && Array.isArray(parsedTiming[0])) {
+                // Handle nested array case: ["[\"12:30\",\"16:30\"]"] -> extract ["12:30","16:30"]
+                return extractTimingValues(parsedTiming[0]);
+            }
         }
-      }
-      
-      // Now we should have an array
-      if (Array.isArray(parsedTiming) && parsedTiming.length >= 2) {
-        return [parsedTiming[0], parsedTiming[1]];
-      } else if (Array.isArray(parsedTiming) && parsedTiming.length === 1 && Array.isArray(parsedTiming[0])) {
-        // Handle nested array case: ["[\"12:30\",\"16:30\"]"] -> extract ["12:30","16:30"]
-        return extractTimingValues(parsedTiming[0]);
-      }
+
+        // If timing is already an array
+        if (Array.isArray(timing)) {
+            if (timing.length >= 2) {
+                return [timing[0], timing[1]];
+            } else if (timing.length === 1) {
+                // If it's a single-element array, check if that element needs processing
+                return extractTimingValues(timing[0]);
+            }
+        }
+    } catch (error) {
+        console.error("Error extracting timing values:", error);
     }
-    
-    // If timing is already an array
-    if (Array.isArray(timing)) {
-      if (timing.length >= 2) {
-        return [timing[0], timing[1]];
-      } else if (timing.length === 1) {
-        // If it's a single-element array, check if that element needs processing
-        return extractTimingValues(timing[0]);
-      }
-    }
-  } catch (error) {
-    console.error("Error extracting timing values:", error);
-  }
-  
-  return null;
+
+    return null;
 }
 
 function BookAppointment() {
@@ -248,6 +252,98 @@ function BookAppointment() {
     const [testimonials, setTestimonials] = useState([]);
     const [testimonialStats, setTestimonialStats] = useState({ average: 0, total: 0 });
     const [loadingTestimonials, setLoadingTestimonials] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState(null);
+    const [razorpayAppointmentId, setRazorpayAppointmentId] = useState(null);
+
+    // Payment handlers
+    const handlePaymentSuccess = (paymentData) => {
+        toast.success('Payment successful!');
+        console.log('Payment successful:', paymentData);
+
+        // Show a success message
+        Swal.fire({
+            title: 'Appointment Confirmed!',
+            text: 'Your payment was successful and your appointment has been confirmed.',
+            icon: 'success',
+            confirmButtonText: 'View My Appointments',
+            showCancelButton: true,
+            cancelButtonText: 'Stay Here'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                navigate('/appointments');
+            } else {
+                // Reset the form and go back to step 1
+                form.resetFields();
+                setSelectedTime(null);
+                setCurrentStep(0);
+                setRazorpayAppointmentId(null);
+                checkAvailableSlots(selectedDate);
+            }
+        });
+    };
+
+    const handlePaymentFailure = () => {
+        toast.error('Payment was not completed');
+        console.log('Payment failed or dismissed');
+
+        // For online payments, the appointment is in a pending state until payment
+        Swal.fire({
+            title: 'Payment Not Completed',
+            text: 'Your appointment is in pending state. You can retry payment or choose to pay at the clinic.',
+            icon: 'warning',
+            confirmButtonText: 'Try Again',
+            showCancelButton: true,
+            cancelButtonText: 'Pay at Clinic Instead'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // User wants to try payment again - no action needed as the payment button is still visible
+            } else {
+                // Switch to pay at clinic
+                setPaymentMethod('clinic');
+                // Update the appointment to pay-at-clinic
+                updateAppointmentPaymentMethod(razorpayAppointmentId, 'clinic');
+            }
+        });
+    };
+
+    // Add a new function to update the appointment payment method
+    const updateAppointmentPaymentMethod = async (appointmentId, newPaymentMethod) => {
+        if (!appointmentId) return;
+
+        try {
+            const response = await api.post(
+                API_ENDPOINTS.USER.UPDATE_APPOINTMENT_PAYMENT_METHOD,
+                {
+                    appointmentId,
+                    paymentMethod: newPaymentMethod
+                }
+            );
+
+            if (response.data.success) {
+                toast.success('Payment method updated successfully');
+                // If changed to clinic payment, show confirmation
+                if (newPaymentMethod === 'clinic') {
+                    Swal.fire({
+                        title: 'Appointment Confirmed',
+                        text: 'Your appointment has been confirmed with payment at the clinic.',
+                        icon: 'success',
+                        confirmButtonText: 'View My Appointments',
+                        showCancelButton: true,
+                        cancelButtonText: 'Stay Here'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            navigate('/appointments');
+                        }
+                    });
+                }
+            } else {
+                toast.error('Failed to update payment method');
+            }
+        } catch (error) {
+            console.error('Error updating payment method:', error);
+            toast.error('Error updating payment method');
+        }
+    };
 
     // Process doctor consultation hours to get start and end times
     const doctorHours = useMemo(() => {
@@ -255,49 +351,49 @@ function BookAppointment() {
             console.log("No doctor data available for doctorHours");
             return null;
         }
-        
+
         console.log("Processing doctor hours from timing:", doctor.timing);
-        
+
         try {
             // Extract the actual timing values using our helper function
             const timingValues = extractTimingValues(doctor.timing);
-            
+
             if (!timingValues || !Array.isArray(timingValues) || timingValues.length < 2) {
                 console.log("Invalid doctor timing data after extraction", timingValues);
                 return null;
             }
-            
+
             let startTimeStr = timingValues[0];
             let endTimeStr = timingValues[1];
-            
+
             console.log("Original doctor hours after extraction:", { startTimeStr, endTimeStr });
-            
+
             // Handle ISO date strings (containing 'T')
             if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
                 startTimeStr = startTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
             }
-            
+
             if (typeof endTimeStr === 'string' && endTimeStr.includes('T')) {
                 endTimeStr = endTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
             }
-            
+
             // Remove any quotes around the time strings
             startTimeStr = typeof startTimeStr === 'string' ? startTimeStr.replace(/"/g, '') : startTimeStr;
             endTimeStr = typeof endTimeStr === 'string' ? endTimeStr.replace(/"/g, '') : endTimeStr;
-            
+
             console.log("Processed time strings:", { startTimeStr, endTimeStr });
-            
+
             // Create moment objects with strict parsing
             const startTime = moment(startTimeStr, 'HH:mm', true);
             const endTime = moment(endTimeStr, 'HH:mm', true);
-            
+
             if (!startTime.isValid() || !endTime.isValid()) {
                 console.error("Invalid time format in doctor timing", { startTimeStr, endTimeStr });
                 return null;
             }
-            
+
             // Log the exact hours and minutes to verify no shifting
-            console.log("Processed doctor hours:", { 
+            console.log("Processed doctor hours:", {
                 startTime: startTime.format('HH:mm'),
                 startHour: startTime.hours(),
                 startMinute: startTime.minutes(),
@@ -305,13 +401,13 @@ function BookAppointment() {
                 endHour: endTime.hours(),
                 endMinute: endTime.minutes()
             });
-            
-            return { 
-                startTime, 
-                endTime, 
+
+            return {
+                startTime,
+                endTime,
                 // Also store the original strings for reference
-                startTimeStr, 
-                endTimeStr 
+                startTimeStr,
+                endTimeStr
             };
         } catch (error) {
             console.error("Error processing doctor hours:", error);
@@ -323,69 +419,69 @@ function BookAppointment() {
     const generateTimeSlots = (selectedDay) => {
         console.log("Generating time slots for:", selectedDay?.format('YYYY-MM-DD'));
         console.log("Doctor object:", doctor);
-        
+
         if (!doctor) {
             console.log("No doctor available, cannot generate time slots");
             return [];
         }
-        
+
         console.log("Doctor timing data available:", doctor.timing);
-        
+
         // Extract the actual timing values
         const timingValues = extractTimingValues(doctor.timing);
         console.log("Extracted timing values for slots:", timingValues);
-        
+
         // Only proceed if we have valid timing values
         if (timingValues && Array.isArray(timingValues) && timingValues.length >= 2) {
             try {
                 // Get doctor hours from the extracted values
                 let startTimeStr = timingValues[0];
                 let endTimeStr = timingValues[1];
-                
+
                 console.log("Original timing strings from doctor:", { startTimeStr, endTimeStr });
-                
+
                 // Handle ISO date strings (containing 'T')
                 if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
                     startTimeStr = startTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
                 }
-                
+
                 if (typeof endTimeStr === 'string' && endTimeStr.includes('T')) {
                     endTimeStr = endTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
                 }
-                
+
                 // Remove any quotes around the time strings
                 startTimeStr = typeof startTimeStr === 'string' ? startTimeStr.replace(/"/g, '') : startTimeStr;
                 endTimeStr = typeof endTimeStr === 'string' ? endTimeStr.replace(/"/g, '') : endTimeStr;
-                
+
                 // Handle empty or invalid time strings
                 if (!startTimeStr || startTimeStr === 'null' || startTimeStr === 'undefined') {
                     console.log("Invalid start time in database");
                     return [];
                 }
-                
+
                 if (!endTimeStr || endTimeStr === 'null' || endTimeStr === 'undefined') {
                     console.log("Invalid end time in database");
                     return [];
                 }
-                
+
                 console.log("Using timing strings after processing:", { startTimeStr, endTimeStr });
-                
+
                 // Create moment objects with strict parsing to ensure they're valid
                 const startTime = moment(startTimeStr, 'HH:mm', true);
                 const endTime = moment(endTimeStr, 'HH:mm', true);
-                
+
                 console.log("Parsed doctor timing:", {
                     startTime: startTime.format('HH:mm'),
                     startTimeValid: startTime.isValid(),
                     endTime: endTime.format('HH:mm'),
                     endTimeValid: endTime.isValid()
                 });
-                
+
                 if (startTime.isValid() && endTime.isValid()) {
                     console.log("Using doctor's actual timing:", startTime.format('HH:mm'), "to", endTime.format('HH:mm'));
                     return generateSlotsFromTimes(startTime, endTime, selectedDay);
                 }
-                
+
                 // If we get here, there was a problem with the doctor's timing
                 console.log("Invalid doctor timing format in database");
                 return [];
@@ -403,42 +499,42 @@ function BookAppointment() {
     const generateSlotsFromTimes = (startTime, endTime, selectedDay) => {
         console.log("Start time:", startTime.format('HH:mm'));
         console.log("End time:", endTime.format('HH:mm'));
-        
+
         const slots = [];
-        
+
         // Check if selectedDay is today
         const isToday = selectedDay && moment().isSame(selectedDay, 'day');
         const isTomorrow = selectedDay && moment().add(1, 'day').isSame(selectedDay, 'day');
-        
+
         // Create a new moment object for iteration but preserve original hour/minute values
         let currentSlot = moment().hours(startTime.hours()).minutes(startTime.minutes());
         const endTimeFormatted = endTime.format('HH:mm');
-        
+
         console.log("Starting iteration at:", currentSlot.format('HH:mm'));
         console.log("Will end at:", endTimeFormatted);
-        
+
         // Safety counter to prevent infinite loops
         let iterationCount = 0;
         const maxIterations = 50;
-        
+
         while (currentSlot.format('HH:mm') !== endTimeFormatted && iterationCount < maxIterations) {
             iterationCount++;
-            
+
             const slotTime = moment(currentSlot);
             const currentHour = parseInt(slotTime.format('HH'), 10);
             const currentMinute = parseInt(slotTime.format('mm'), 10);
-            
+
             // Get current time
             const now = moment();
-            
+
             // For today's slots, apply time constraint rule
             if (isToday) {
                 // Calculate hours difference between current time and slot time
                 const slotTimeObj = moment().set('hour', currentHour).set('minute', currentMinute);
                 const hoursDifference = slotTimeObj.diff(now, 'hours', true);
-                
+
                 console.log(`Slot ${slotTime.format('HH:mm')} - Hours difference: ${hoursDifference.toFixed(2)}`);
-                
+
                 // Rule: For same-day bookings, slot must be at least 12 hours in advance
                 if (hoursDifference < 12) {
                     console.log(`Slot ${slotTime.format('HH:mm')} excluded - less than 12 hours advance notice`);
@@ -446,13 +542,13 @@ function BookAppointment() {
                     continue;
                 }
             }
-            
+
             // For next day slots, ensure they're at least 24 hours in advance if they're in first half of day
             if (isTomorrow && currentHour < 12) {
                 // Calculate total hours difference between now and slot time
                 const slotDateTime = moment().add(1, 'day').set('hour', currentHour).set('minute', currentMinute);
                 const hoursDifference = slotDateTime.diff(now, 'hours', true);
-                
+
                 // If slot is less than 24 hours away, don't include it
                 if (hoursDifference < 24) {
                     console.log(`Tomorrow's morning slot ${slotTime.format('HH:mm')} excluded - less than 24 hours advance notice`);
@@ -460,16 +556,16 @@ function BookAppointment() {
                     continue;
                 }
             }
-            
+
             // Add the slot
             slots.push(moment(slotTime));
-            
+
             // Move to next slot ensuring we preserve hour/minute exactness
             currentSlot = moment(currentSlot).add(30, 'minutes');
-            
-            console.log(`Added slot: ${slots[slots.length-1].format('HH:mm')}, Next: ${currentSlot.format('HH:mm')}`);
+
+            console.log(`Added slot: ${slots[slots.length - 1].format('HH:mm')}, Next: ${currentSlot.format('HH:mm')}`);
         }
-        
+
         console.log(`Generated ${slots.length} slots:`, slots.map(s => s.format('HH:mm')));
         return slots;
     };
@@ -493,23 +589,23 @@ function BookAppointment() {
                 return;
             }
         }
-        
+
         console.log("Checking slots for date:", date.format('YYYY-MM-DD'));
         setSlotsLoading(true);
         const formattedDate = moment(date).format("DD-MM-YYYY");
-        
+
         try {
             // Get all possible time slots for the doctor, applying time constraint rules
             const allSlots = generateTimeSlots(date);
             console.log("All possible slots (after time constraint):", allSlots.length);
-            
+
             if (allSlots.length === 0) {
                 console.log("No slots available for this date after applying time constraints");
                 setAvailableTimes([]);
                 setSlotsLoading(false);
-                
+
                 toast.info("No appointment slots available for this date due to advance booking requirements. Please select another date.");
-                
+
                 // Find the closest available date with slots
                 const nextAvailableSlots = await findNextAvailableSlots(date, 7);
                 setSuggestedSlots(nextAvailableSlots);
@@ -518,14 +614,14 @@ function BookAppointment() {
                 }
                 return;
             }
-            
+
             // Create an array to collect all available slots for batch processing
             const slotCheckPayloads = allSlots.map(slot => ({
                 time: slot.format("HH:mm"),
                 moment: slot,
                 available: null // We'll fill this in after checking
             }));
-            
+
             // Get already booked slots for the given date - more efficient than checking one by one
             try {
                 const effectiveDoctorId = doctor.userId || doctorId;
@@ -536,30 +632,30 @@ function BookAppointment() {
                         date: date.format('YYYY-MM-DD')
                     }
                 );
-                
+
                 console.log("Booked slots response:", bookedResponse.data);
-                
+
                 if (bookedResponse.data.success) {
                     const bookedSlots = bookedResponse.data.bookedSlots || [];
                     // console.log("Retrieved booked slots:", bookedSlots);
-                    
+
                     // Mark slots as available or not
                     slotCheckPayloads.forEach(slot => {
                         // Check if this slot is in the booked slots
                         const isBooked = bookedSlots.includes(slot.time);
                         slot.available = !isBooked;
                     });
-                    
+
                     // Only keep available slots for the UI
                     const availableSlots = slotCheckPayloads.filter(slot => slot.available);
                     // console.log("Available slots after checking bookings:", availableSlots.length);
-                    
+
                     setAvailableTimes(availableSlots);
-                    
+
                     // If there are no available slots, generate suggestions
                     if (availableSlots.length === 0 && allSlots.length > 0) {
                         toast.info("All slots are booked for this date. Check our suggested alternatives.");
-                        
+
                         // Find the closest available date with slots
                         const nextAvailableSlots = await findNextAvailableSlots(date, 7);
                         setSuggestedSlots(nextAvailableSlots);
@@ -569,7 +665,7 @@ function BookAppointment() {
                     }
                 } else {
                     console.error("Failed to get booked slots:", bookedResponse.data.message);
-                    
+
                     // Fall back to individual slot checking if batch check fails
                     await checkSlotsIndividually(allSlots, formattedDate);
                 }
@@ -588,7 +684,7 @@ function BookAppointment() {
             } else {
                 console.error("Error setting up request:", error.message);
             }
-            
+
             // toast.error('Error checking appointment availability. Please try again.');
         } finally {
             setSlotsLoading(false);
@@ -600,11 +696,11 @@ function BookAppointment() {
         console.log("Falling back to individual slot checking");
         let availableSlots = [];
         let bookedSlots = [];
-        
+
         for (const slot of allSlots) {
             const timeString = slot.format("HH:mm");
             console.log("Checking availability for time:", timeString);
-            
+
             try {
                 // Create the request payload
                 const payload = {
@@ -614,14 +710,14 @@ function BookAppointment() {
                 };
 
                 console.log("Sending availability check with payload:", payload);
-                
+
                 const response = await api.post(
-                    API_ENDPOINTS.USER.CHECK_BOOK_AVAILABILITY, 
+                    API_ENDPOINTS.USER.CHECK_BOOK_AVAILABILITY,
                     payload
                 );
-                
+
                 console.log("Availability response for", timeString, ":", response.data);
-                
+
                 if (response.data.success) {
                     console.log("Slot available:", timeString);
                     availableSlots.push({
@@ -644,7 +740,7 @@ function BookAppointment() {
                     console.error("Response data:", error.response.data);
                     console.error("Response status:", error.response.status);
                 }
-                
+
                 // Don't interrupt the loop, continue checking other slots
                 bookedSlots.push({
                     time: timeString,
@@ -654,16 +750,16 @@ function BookAppointment() {
                 });
             }
         }
-        
+
         console.log("Available slots:", availableSlots.length);
         console.log("Booked slots:", bookedSlots.length);
-        
+
         setAvailableTimes([...availableSlots]);
-        
+
         // If there are no available slots, generate suggestions
         if (availableSlots.length === 0 && allSlots.length > 0) {
             toast.info("All slots are booked for this date. Check our suggested alternatives.");
-            
+
             // Find the closest available date with slots
             const nextAvailableSlots = await findNextAvailableSlots(date, 7);
             setSuggestedSlots(nextAvailableSlots);
@@ -679,34 +775,34 @@ function BookAppointment() {
             console.log("Missing doctor information for finding available slots");
             return [];
         }
-        
+
         // Use doctorId from URL if doctor object doesn't have userId
         const effectiveDoctorId = doctor?.userId || doctorId;
-        
+
         // Don't show global loader for this operation - we already have slotsLoading active
         // We'll keep using the existing slot loading indicator from the parent function
-        
+
         const suggestions = [];
-        
+
         try {
             for (let i = 1; i <= daysToCheck; i++) {
                 const checkDate = moment(startDate).add(i, 'days');
                 const formattedDate = checkDate.format("DD-MM-YYYY");
-                
+
                 // Get all possible time slots for the doctor
                 const allSlots = generateTimeSlots(checkDate);
-                
+
                 if (allSlots.length === 0) {
                     console.log(`No slots available for date ${formattedDate}`);
                     continue;
                 }
-                
+
                 // Check a few slots to see if any are available (not checking all to save API calls)
                 const slotsToCheck = allSlots.filter((_, index) => index % 3 === 0); // Check every 3rd slot
-                
+
                 for (const slot of slotsToCheck) {
                     const timeString = slot.format("HH:mm");
-                    
+
                     try {
                         // Create the request payload
                         const payload = {
@@ -714,16 +810,16 @@ function BookAppointment() {
                             date: formattedDate,
                             time: timeString,
                         };
-                        
+
                         console.log(`Checking future slot on ${formattedDate} at ${timeString}`);
-                        
+
                         const response = await api.post(
-                            'user/check-book-availability', 
+                            'user/check-book-availability',
                             payload
                         );
-                        
+
                         console.log(`Availability response for future slot on ${formattedDate} at ${timeString}:`, response.data);
-                        
+
                         if (response.data.success) {
                             console.log(`Found available slot on ${formattedDate} at ${timeString}`);
                             suggestions.push({
@@ -732,7 +828,7 @@ function BookAppointment() {
                                 formattedDate: formattedDate,
                                 formattedTime: moment(timeString, 'HH:mm').format('hh:mm A')
                             });
-                            
+
                             // If we found 3 suggestions, stop looking
                             if (suggestions.length >= 3) {
                                 return suggestions;
@@ -750,13 +846,13 @@ function BookAppointment() {
                         } else {
                             console.error("Error setting up request:", error.message);
                         }
-                        
+
                         // Don't break the entire function, just continue to next slot
                         continue;
                     }
                 }
             }
-            
+
             return suggestions;
         } catch (error) {
             console.error('Error finding next available slots:', error);
@@ -770,7 +866,7 @@ function BookAppointment() {
             setErrorMessage("");
             dispatch(showLoading());
             console.log("Fetching doctor info for ID:", doctorId);
-            
+
             if (!doctorId) {
                 setLoadingError(true);
                 setErrorMessage("No doctor ID provided");
@@ -778,27 +874,27 @@ function BookAppointment() {
                 dispatch(hideLoading());
                 return false;
             }
-            
+
             // More robust approach using params
             const encodedDoctorId = encodeURIComponent(doctorId);
             console.log("Encoded doctorId:", encodedDoctorId);
-            
+
             const response = await api.get(API_ENDPOINTS.DOCTOR.GET_DOCTOR_BY_ID(encodedDoctorId));
-            
+
             console.log("API Response:", response.data);
             dispatch(hideLoading());
 
             if (response.data.success && response.data.data) {
                 const doctorData = response.data.data;
                 console.log("Doctor data received:", doctorData);
-                
+
                 // Validate the timing data format and ensure it's correctly handled
                 if (doctorData.timing && Array.isArray(doctorData.timing)) {
                     console.log("Original timing data:", doctorData.timing);
-                    
+
                     // Make a deep copy to avoid mutating the response data directly
                     const processedDoctor = { ...doctorData };
-                    
+
                     // Ensure timing data is consistently formatted
                     if (processedDoctor.timing.length >= 2) {
                         processedDoctor.timing = processedDoctor.timing.map(time => {
@@ -807,13 +903,13 @@ function BookAppointment() {
                             }
                             return time;
                         });
-                        
+
                         console.log("Processed timing data:", processedDoctor.timing);
                     }
-                    
+
                     setDoctor(processedDoctor);
                     return true;
-            } else {
+                } else {
                     console.log("Setting doctor with original data");
                     setDoctor(doctorData);
                     return true;
@@ -830,7 +926,7 @@ function BookAppointment() {
             setErrorMessage("Network error. Please try again later.");
             dispatch(hideLoading());
             console.error('Error fetching doctor information:', error);
-            
+
             // More detailed error logging
             if (error.response) {
                 console.error("Response status:", error.response.status);
@@ -843,33 +939,40 @@ function BookAppointment() {
                 console.error("Error setting up request:", error.message);
                 setErrorMessage(`Error: ${error.message}`);
             }
-            
+
             toast.error('Failed to load doctor information. Please refresh the page.');
             return false;
         }
     };
 
+    // Update the bookAppointment function to set the appointment ID immediately after receiving it from the API
     const bookAppointment = async () => {
         if (!selectedDate || !selectedTime) {
             toast.error('Please select a date and time');
             return;
         }
-        
+
+        // Check if payment method is selected
+        if (!paymentMethod) {
+            toast.error('Please select a payment method');
+            return;
+        }
+
         // Check if we have either doctor.userId or doctorId from URL
         if (!doctor?.userId && !doctorId) {
             toast.error('Doctor information is not available. Please try again later.');
             return;
         }
-        
+
         // Get the current form values synchronously to ensure we have the latest values
         const formData = form.getFieldsValue(true);
         console.log("Current form values:", formData);
-        
+
         // Log the selected date and time for debugging
         console.log("Selected Date (moment object):", selectedDate);
         console.log("Selected Date (formatted):", selectedDate.format("DD-MM-YYYY"));
         console.log("Selected Time:", selectedTime.format("HH:mm"));
-        
+
         // Explicitly check for the reason field
         if (!formData.reason || formData.reason.trim() === '') {
             toast.error('Please provide a reason for your visit');
@@ -880,7 +983,7 @@ function BookAppointment() {
             }
             return;
         }
-        
+
         // Continue with form validation for all fields
         try {
             await form.validateFields();
@@ -889,21 +992,21 @@ function BookAppointment() {
             toast.error('Please fill in all required fields');
             return;
         }
-        
+
         setLoading(true);
         dispatch(showLoading());
-        
+
         try {
             // Format the date in DD-MM-YYYY format
             const formattedDate = selectedDate.format("DD-MM-YYYY");
             const formattedTime = selectedTime.format("HH:mm");
-            
+
             // Log the final payload before sending
             console.log("Final payload date:", formattedDate);
-            
+
             // Use the effective doctorId (from doctor object or URL param)
             const effectiveDoctorId = doctor?.userId || doctorId;
-                
+
             // Create payload and log it for debugging
             const payload = {
                 doctorId: effectiveDoctorId,
@@ -917,40 +1020,61 @@ function BookAppointment() {
                 medicalHistory: formData.medicalHistory || "",
                 preferredCommunication: formData.preferredCommunication || "phone",
                 emergencyContact: formData.emergencyContact || "",
-                additionalNotes: formData.additionalNotes || ""
+                additionalNotes: formData.additionalNotes || "",
+                paymentMethod: paymentMethod, // Add the selected payment method
+                // For razorpay, set initial status to pending-payment
+                status: paymentMethod === 'razorpay' ? 'pending-payment' : 'pending'
             };
-            
+
             console.log('Sending appointment booking request with payload:', payload);
-            
+
             const response = await api.post(
-                API_ENDPOINTS.USER.BOOK_APPOINTMENT, 
+                API_ENDPOINTS.USER.BOOK_APPOINTMENT,
                 payload
             );
 
             dispatch(hideLoading());
             setLoading(false);
-            
+
             console.log('Appointment booking response:', response.data);
 
             if (response.data.success) {
-                Swal.fire({
-                    title: 'Appointment Booked!',
-                    text: 'Your appointment has been successfully scheduled',
-                    icon: 'success',
-                    confirmButtonText: 'View My Appointments',
-                    showCancelButton: true,
-                    cancelButtonText: 'Stay Here'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        navigate('/appointments');
-                    } else {
-                        // Reset the form and go back to step 1
-                        form.resetFields();
-                        setSelectedTime(null);
-                        setCurrentStep(0);
-                        checkAvailableSlots(selectedDate);
-                    }
-                });
+                const appointmentId = response.data.data._id || response.data.data.id;
+                console.log("Received appointment ID:", appointmentId);
+
+                if (paymentMethod === 'razorpay') {
+                    // Store the appointment ID for the Razorpay component
+                    setRazorpayAppointmentId(appointmentId);
+                    console.log("Set Razorpay appointment ID to:", appointmentId);
+
+                    // Only notify user to proceed with payment
+                    Swal.fire({
+                        title: 'Almost Done!',
+                        text: 'Please complete your payment to confirm the appointment.',
+                        icon: 'info',
+                        confirmButtonText: 'Proceed to Payment'
+                    });
+                } else {
+                    // Show the standard confirmation for pay-at-clinic
+                    Swal.fire({
+                        title: 'Appointment Booked!',
+                        text: 'Your appointment has been successfully scheduled. Payment will be collected at the clinic.',
+                        icon: 'success',
+                        confirmButtonText: 'View My Appointments',
+                        showCancelButton: true,
+                        cancelButtonText: 'Stay Here'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            navigate('/appointments');
+                        } else {
+                            // Reset the form and go back to step 1
+                            form.resetFields();
+                            setSelectedTime(null);
+                            setCurrentStep(0);
+                            checkAvailableSlots(selectedDate);
+                        }
+                    });
+                }
             } else {
                 Swal.fire({
                     title: 'Booking Failed',
@@ -961,20 +1085,20 @@ function BookAppointment() {
         } catch (error) {
             dispatch(hideLoading());
             setLoading(false);
-            
+
             // Enhanced error logging
             console.error('Error booking appointment:', error);
-            
+
             let errorMessage = 'Something went wrong while booking your appointment';
-            
+
             if (error.response) {
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx
                 console.error('Server error response:', error.response.data);
                 console.error('Status code:', error.response.status);
-                
-                errorMessage = error.response.data.message || 
-                              `Server error (${error.response.status}): ${error.response.statusText}`;
+
+                errorMessage = error.response.data.message ||
+                    `Server error (${error.response.status}): ${error.response.statusText}`;
             } else if (error.request) {
                 // The request was made but no response was received
                 console.error('No response received:', error.request);
@@ -984,7 +1108,7 @@ function BookAppointment() {
                 console.error('Request setup error:', error.message);
                 errorMessage = `Error: ${error.message}`;
             }
-            
+
             Swal.fire({
                 title: 'Error',
                 text: errorMessage,
@@ -997,17 +1121,17 @@ function BookAppointment() {
     const handleDateSelect = (date) => {
         // Clone the date to prevent any reference issues
         const safeDate = date ? moment(date) : null;
-        
+
         // Log the incoming date and processed date
         console.log("Incoming date:", date);
         console.log("Processed safeDate:", safeDate?.format("DD-MM-YYYY"));
-        
+
         // Make sure the date is not in the past and is valid
         if (!safeDate || !safeDate.isValid()) {
             toast.error('Invalid date selection');
             return;
         }
-        
+
         if (safeDate.isBefore(moment().startOf('day'))) {
             toast.error('Cannot select a past date');
             return;
@@ -1016,15 +1140,15 @@ function BookAppointment() {
         // Set the selected date with proper time preservation
         setSelectedDate(safeDate);
         setSelectedTime(null);
-        
+
         // Log the state update
         console.log("Updated selectedDate state:", safeDate.format("DD-MM-YYYY"));
-        
+
         // Reset the form's date field to ensure it matches the selected date
         form.setFieldsValue({
             date: safeDate.format('YYYY-MM-DD')
         });
-        
+
         // Only show the slot-specific loading indicator for this operation
         setSlotsLoading(true);
         checkAvailableSlots(safeDate);
@@ -1041,16 +1165,16 @@ function BookAppointment() {
             toast.error('Please select a time slot');
             return;
         }
-        
+
         // When moving from patient details to confirmation
         if (currentStep === 1) {
             // Save current form values to state before validation
             const currentValues = form.getFieldsValue(true);
-            setAppointmentDetails(prev => ({...prev, ...currentValues}));
-            
+            setAppointmentDetails(prev => ({ ...prev, ...currentValues }));
+
             // Get the current reason value directly from the form
             const reasonValue = currentValues.reason;
-            
+
             // Check if reason is empty or undefined
             if (!reasonValue || reasonValue.trim() === '') {
                 // Trigger validation on the reason field
@@ -1061,7 +1185,7 @@ function BookAppointment() {
                     });
                 return;
             }
-            
+
             // Continue with form validation for all other fields
             form.validateFields()
                 .then(() => {
@@ -1074,7 +1198,7 @@ function BookAppointment() {
                 });
             return;
         }
-        
+
         setCurrentStep(currentStep + 1);
     };
 
@@ -1085,7 +1209,7 @@ function BookAppointment() {
             // Re-apply the saved appointmentDetails to the form
             form.setFieldsValue(appointmentDetails);
         }
-        
+
         setCurrentStep(currentStep - 1);
     };
 
@@ -1117,17 +1241,17 @@ function BookAppointment() {
                 console.error("Cannot test API - no doctorId available");
                 return;
             }
-            
+
             // Make a direct request with minimal wrapping
             const testResponse = await api.get(API_ENDPOINTS.DOCTOR.GET_DOCTOR_BY_ID(encodeURIComponent(doctorId)));
-            
+
             const testData = testResponse.data;
             console.log("Direct API test result:", {
                 status: testResponse.status,
                 ok: testResponse.ok,
                 data: testData
             });
-            
+
         } catch (error) {
             console.error("Direct API test failed:", error);
         }
@@ -1143,13 +1267,13 @@ function BookAppointment() {
     useEffect(() => {
         let isMounted = true;
         let retryTimeout = null;
-        
+
         console.log("BookAppointment component mounted with doctorId:", doctorId);
-        
+
         // Track loading attempts
         const loadDoctorInfo = async (retryCount = 0) => {
             if (!isMounted) return;
-            
+
             if (retryCount > 3) {
                 setLoadingError(true);
                 setErrorMessage("Failed to load doctor information after multiple attempts");
@@ -1157,40 +1281,40 @@ function BookAppointment() {
                 dispatch(hideLoading()); // Make sure to hide the loader if we fail
                 return;
             }
-            
+
             try {
                 console.log(`Attempting to load doctor info (attempt ${retryCount + 1})`);
                 const success = await getDoctorInfo();
-                
+
                 if (success) {
                     console.log("Doctor info loaded successfully");
-            dispatch(hideLoading());
-                    
+                    dispatch(hideLoading());
+
                     // Check for doctor state after a short delay to ensure state update
                     setTimeout(() => {
                         if (!isMounted) return;
-                        
+
                         console.log("Current doctor state:", doctor);
-                        
+
                         // Check available slots without waiting for doctor state check
                         // Instead, we'll use the response directly
                         console.log("Checking available slots for today");
                         checkAvailableSlots(moment());
-                        
+
                     }, 100);
-            } else {
+                } else {
                     console.log("Failed to load doctor data, will retry");
                     if (isMounted && retryCount < 3) {
                         const delay = 1500 * (retryCount + 1);
-                        console.log(`Will retry in ${delay/1000}s (attempt ${retryCount + 2})`);
+                        console.log(`Will retry in ${delay / 1000}s (attempt ${retryCount + 2})`);
                         retryTimeout = setTimeout(() => loadDoctorInfo(retryCount + 1), delay);
                     } else {
                         setLoadingError(true);
                         setErrorMessage("Failed to load doctor after multiple attempts");
                         dispatch(hideLoading());
                     }
-            }
-        } catch (error) {
+                }
+            } catch (error) {
                 console.error("Error in retry mechanism:", error);
                 if (isMounted && doctorId && retryCount < 3) {
                     const delay = 1500 * (retryCount + 1);
@@ -1202,7 +1326,7 @@ function BookAppointment() {
                 }
             }
         };
-        
+
         if (doctorId) {
             dispatch(showLoading()); // Show the global loader for initial doctor data fetch
             // Immediate attempt without delay
@@ -1212,7 +1336,7 @@ function BookAppointment() {
             setErrorMessage("No doctor ID provided");
             console.error("No doctorId provided to BookAppointment component");
         }
-        
+
         // Cleanup function to prevent memory leaks and state updates after unmount
         return () => {
             console.log("BookAppointment component unmounting, cleaning up");
@@ -1313,11 +1437,11 @@ function BookAppointment() {
                             </h3>
                             <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
                                 {/* Only use SimpleDateSelector for reliability */}
-                                <SimpleDateSelector 
+                                <SimpleDateSelector
                                     selectedDate={selectedDate}
                                     onDateSelect={handleDateSelect}
                                 />
-                                
+
                                 <div className="mt-3">
                                     <Alert
                                         message="Note on Appointment Booking"
@@ -1328,7 +1452,7 @@ function BookAppointment() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="time-selection mt-4 lg:mt-0">
                             <h3 className="text-lg font-semibold mb-3 flex items-center">
                                 <ClockCircleOutlined className="mr-2 text-blue-500" />
@@ -1339,70 +1463,62 @@ function BookAppointment() {
                                     </span>
                                 )}
                             </h3>
-                            
+
                             <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow">
                                 {/* Show only actual doctor's consulting hours, no defaults */}
                                 <div className="consulting-hours mb-3">
                                     <p className="text-sm text-gray-500">Doctor's Consulting Hours</p>
-                                    <p className="font-medium text-gray-700">
+                                    <p className="font-medium text-sm sm:text-base text-gray-700">
                                         {(() => {
-                                            // First check if doctor exists
+                                            // (existing code to get consultation hours)
                                             if (!doctor) return 'Consultation hours not available';
-                                            
-                                            // Extract the actual timing values using our helper function
+
                                             const timingValues = extractTimingValues(doctor.timing);
-                                            
-                                            console.log("Extracted timing values:", timingValues);
-                                            
-                                            // If we couldn't extract valid timing values
+
                                             if (!timingValues || !Array.isArray(timingValues) || timingValues.length < 2) {
                                                 return 'Consultation hours not specified';
                                             }
-                                            
-                                            // Extract and format times properly
+
                                             let startTimeStr = timingValues[0];
                                             let endTimeStr = timingValues[1];
-                                            
-                                            // Handle ISO date strings (containing 'T')
+
                                             if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
-                                                startTimeStr = startTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
+                                                startTimeStr = startTimeStr.split('T')[1].substring(0, 5);
                                             }
-                                            
+
                                             if (typeof endTimeStr === 'string' && endTimeStr.includes('T')) {
-                                                endTimeStr = endTimeStr.split('T')[1].substring(0, 5); // Extract HH:mm
+                                                endTimeStr = endTimeStr.split('T')[1].substring(0, 5);
                                             }
-                                            
+
                                             // Handle empty or invalid time strings
                                             if (!startTimeStr || startTimeStr === 'null' || startTimeStr === 'undefined' ||
                                                 !endTimeStr || endTimeStr === 'null' || endTimeStr === 'undefined') {
                                                 return 'Consultation hours not available';
                                             }
-                                            
+
                                             // Remove any quotes around the time strings
                                             startTimeStr = startTimeStr.replace(/"/g, '');
                                             endTimeStr = endTimeStr.replace(/"/g, '');
-                                            
-                                            console.log("Final timing strings:", { startTimeStr, endTimeStr });
-                                            
+
                                             // Create moment objects with strict parsing to ensure they're valid
                                             const startTime = moment(startTimeStr, 'HH:mm', true);
                                             const endTime = moment(endTimeStr, 'HH:mm', true);
-                                            
+
                                             // Format for display
                                             if (startTime.isValid() && endTime.isValid()) {
                                                 return `${startTime.format('h:mm A')} - ${endTime.format('h:mm A')}`;
                                             }
-                                            
+
                                             // If all else fails
                                             return 'Consultation hours not available';
                                         })()}
                                     </p>
                                 </div>
-                                
+
                                 <Divider className="my-2" />
-                                
+
                                 {renderTimeSlots()}
-                                
+
                                 {selectedTime && (
                                     <div className="selected-slot mt-4">
                                         <Alert
@@ -1432,7 +1548,7 @@ function BookAppointment() {
                             <UserOutlined className="mr-2 text-blue-500" />
                             Appointment Details
                         </h3>
-                        
+
                         <Form
                             form={form}
                             layout="vertical"
@@ -1446,36 +1562,36 @@ function BookAppointment() {
                                 label="Reason for Visit"
                                 rules={[{ required: true, message: 'Please provide a reason for your visit' }]}
                             >
-                                <Input 
-                                    placeholder="E.g., Annual checkup, Follow-up, New symptoms, etc." 
+                                <Input
+                                    placeholder="E.g., Annual checkup, Follow-up, New symptoms, etc."
                                     size="large"
                                 />
                             </Form.Item>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                 <Form.Item
                                     name="symptoms"
                                     label="Current Symptoms (if any)"
                                 >
-                                    <TextArea 
-                                        rows={4} 
-                                        placeholder="Please describe any symptoms you're experiencing" 
+                                    <TextArea
+                                        rows={4}
+                                        placeholder="Please describe any symptoms you're experiencing"
                                     />
                                 </Form.Item>
-                                
+
                                 <Form.Item
                                     name="medicalHistory"
                                     label="Relevant Medical History"
                                 >
-                                    <TextArea 
-                                        rows={4} 
-                                        placeholder="Any relevant medical history, medications, allergies, etc." 
+                                    <TextArea
+                                        rows={4}
+                                        placeholder="Any relevant medical history, medications, allergies, etc."
                                     />
                                 </Form.Item>
                             </div>
-                            
+
                             <Divider className="my-2 md:my-4">Communication Preferences</Divider>
-                            
+
                             <Form.Item
                                 name="preferredCommunication"
                                 label="Preferred Communication Method"
@@ -1489,26 +1605,26 @@ function BookAppointment() {
                                     </Radio>
                                 </Radio.Group>
                             </Form.Item>
-                            
+
                             <Form.Item
                                 name="emergencyContact"
                                 label="Emergency Contact Number"
                                 tooltip="Please provide a contact number that can be used in case of emergency"
                             >
-                                <Input 
-                                    placeholder="Emergency contact number" 
+                                <Input
+                                    placeholder="Emergency contact number"
                                     prefix={<PhoneOutlined />}
                                     size="large"
                                 />
                             </Form.Item>
-                            
+
                             <Form.Item
                                 name="additionalNotes"
                                 label="Additional Notes for the Doctor"
                             >
-                                <TextArea 
-                                    rows={3} 
-                                    placeholder="Any other information you'd like the doctor to know before your appointment" 
+                                <TextArea
+                                    rows={3}
+                                    placeholder="Any other information you'd like the doctor to know before your appointment"
                                 />
                             </Form.Item>
                         </Form>
@@ -1527,74 +1643,285 @@ function BookAppointment() {
                         </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <div>
-                                <Card title="Doctor Information" className="mb-4">
+                            <div className="w-full">
+                                <Card title="Doctor Information" className="mb-4 overflow-hidden">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4">
                                         <img 
                                             src={doctor?.image || "https://via.placeholder.com/100x100"} 
                                             alt={`Dr. ${doctor?.firstname || 'Unknown'} ${doctor?.lastname || ''}`}
                                             className="w-16 h-16 object-cover rounded-full mr-4 mb-2 sm:mb-0"
                                         />
-                                        <div>
-                                            <h4 className="text-base font-medium">Dr. {doctor?.firstname || 'Unknown'} {doctor?.lastname || ''}</h4>
-                                            <p className="text-sm text-gray-500">{doctor?.specialization || doctor?.department || 'Specialist'}</p>
+                                        <div className="min-w-0">
+                                            <h4 className="text-base font-medium truncate">{doctor?.firstname ? `Dr. ${doctor.firstname} ${doctor?.lastname || ''}` : 'Doctor'}</h4>
+                                            <p className="text-sm text-gray-500 truncate">{doctor?.specialization || doctor?.department || 'Specialist'}</p>
                                             <div className="mt-1 text-sm">{doctor?.experience || '0'} years experience</div>
                                         </div>
                                     </div>
                                     
-                                    <div className="text-sm">
+                                    <div className="text-sm space-y-1">
                                         <p><strong>Consultation Fee:</strong> ₹{doctor?.feePerConsultation || 'Not specified'}</p>
-                                        <p><strong>Location:</strong> {doctor?.address || 'Not specified'}</p>
+                                        <p className="truncate"><strong>Location:</strong> {doctor?.address || 'Not specified'}</p>
                                     </div>
                                 </Card>
                                 
-                                <Card title="Appointment Details" className="mb-4 md:mb-0">
+                                <Card title="Appointment Details" className="mb-4 md:mb-0 overflow-hidden">
                                     <div className="flex items-center mb-3">
-                                        <CalendarOutlined className="text-blue-500 mr-2" />
-                                        <span className="font-medium">{selectedDate?.format('dddd, MMMM D, YYYY')}</span>
+                                        <CalendarOutlined className="text-blue-500 mr-2 flex-shrink-0" />
+                                        <span className="font-medium truncate">{selectedDate?.format('dddd, MMMM D, YYYY')}</span>
                                     </div>
                                     
                                     <div className="flex items-center mb-3">
-                                        <ClockCircleOutlined className="text-blue-500 mr-2" />
+                                        <ClockCircleOutlined className="text-blue-500 mr-2 flex-shrink-0" />
                                         <span className="font-medium">{selectedTime?.format('hh:mm A')}</span>
                                     </div>
                                     
                                     <Alert
-                                        message="Payment Information"
+                                        message={<span className="text-base font-medium">Payment Method</span>}
                                         description={
-                                            <div className="text-sm">
-                                                <p>Payment will be collected at the clinic.</p>
-                                                <p className="font-medium mt-1">Amount: ₹{doctor?.feePerConsultation || 'Consultation fee'}</p>
+                                            <div className="space-y-4 overflow-hidden">
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div className="text-sm text-gray-600 mb-1">
+                                                        Select how you'd like to pay for your consultation
+                                                    </div>
+                                                    
+                                                    {/* Payment Options Cards */}
+                                                    <div className="grid grid-row-1 sm:grid-row-2 gap-3">
+                                                        {/* Pay at Clinic option */}
+                                                        <div
+                                                            className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-md
+                                                                ${paymentMethod === 'clinic' 
+                                                                    ? 'border-blue-500 bg-blue-50 shadow-sm' 
+                                                                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'}`}
+                                                            onClick={() => setPaymentMethod('clinic')}
+                                                        >
+                                                            <div className="absolute top-3 right-3">
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center 
+                                                                    ${paymentMethod === 'clinic' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}
+                                                                >
+                                                                    {paymentMethod === 'clinic' && <CheckOutlined className="text-white text-xs" />}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-start gap-3">
+                                                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                    <WalletOutlined className="text-blue-600 text-lg" />
+                                                                </div>
+                                                                <div className="min-w-0 pt-1">
+                                                                    <p className="font-medium text-gray-900">Pay at Clinic</p>
+                                                                    <p className="text-sm text-gray-500 mt-1">Make payment when you arrive for your appointment</p>
+                                                                    
+                                                                    <div className="mt-3 flex items-center text-sm text-gray-500">
+                                                                        <CalendarOutlined className="mr-1 text-blue-500" />
+                                                                        <span>Pay on {selectedDate?.format('MMM D, YYYY')}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {paymentMethod === 'clinic' && (
+                                                                <div className="mt-3 text-xs bg-blue-100 text-blue-700 rounded-lg p-2">
+                                                                    <div className="flex items-start">
+                                                                        <InfoCircleOutlined className="mr-1 mt-0.5 flex-shrink-0" />
+                                                                        <span>Your appointment will be confirmed immediately. Payment will be collected at the clinic.</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* Razorpay option */}
+                                                        <div
+                                                            className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-md
+                                                                ${paymentMethod === 'razorpay' 
+                                                                    ? 'border-green-500 bg-green-50 shadow-sm' 
+                                                                    : 'border-gray-200 hover:border-green-300 hover:bg-green-50/30'}`}
+                                                            onClick={() => setPaymentMethod('razorpay')}
+                                                        >
+                                                            <div className="absolute top-3 right-3">
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center 
+                                                                    ${paymentMethod === 'razorpay' ? 'border-green-500 bg-green-500' : 'border-gray-300'}`}
+                                                                >
+                                                                    {paymentMethod === 'razorpay' && <CheckOutlined className="text-white text-xs" />}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-start gap-3">
+                                                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                                    <CreditCardOutlined className="text-green-600 text-lg" />
+                                                                </div>
+                                                                <div className="min-w-0 pt-1">
+                                                                    <p className="font-medium text-gray-900">Pay Online Now</p>
+                                                                    <p className="text-sm text-gray-500 mt-1">Secure payment via credit/debit card or UPI</p>
+                                                                    
+                                                                    <div className="mt-3 flex items-center text-sm text-gray-500">
+                                                                        <LockOutlined className="mr-1 text-green-500" />
+                                                                        <span>Safe & secure via Razorpay</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {paymentMethod === 'razorpay' && (
+                                                                <div className="mt-3 text-xs bg-green-100 text-green-700 rounded-lg p-2">
+                                                                    <div className="flex items-start">
+                                                                        <InfoCircleOutlined className="mr-1 mt-0.5 flex-shrink-0" />
+                                                                        <span>Your appointment will be confirmed after successful payment. Multiple payment options available.</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Payment Summary */}
+                                                    <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-sm text-gray-600">Consultation Fee:</span>
+                                                            <span className="font-medium text-base">₹{doctor?.feePerConsultation || '500'}</span>
+                                                        </div>
+                                                        
+                                                        {paymentMethod && (
+                                                            <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
+                                                                <span className="text-sm font-medium">Payment Method:</span>
+                                                                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                                                                    paymentMethod === 'clinic' 
+                                                                        ? 'bg-blue-100 text-blue-700' 
+                                                                        : 'bg-green-100 text-green-700'
+                                                                }`}>
+                                                                    {paymentMethod === 'clinic' ? 'At Clinic' : 'Online Now'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {!paymentMethod && (
+                                                        <div className="text-amber-600 text-sm flex items-center p-2 bg-amber-50 rounded-lg border border-amber-200">
+                                                            <InfoCircleOutlined className="mr-2 text-amber-500" /> 
+                                                            Please select a payment method to proceed
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         }
                                         type="info"
                                         showIcon
                                         className="mt-3"
                                     />
+
+                                    {paymentMethod === 'razorpay' && (
+                                        <div className="mt-4">
+                                            {razorpayAppointmentId ? (
+                                                <div className="text-center">
+                                                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
+                                                        <p className="text-amber-700 flex items-center justify-center text-sm">
+                                                            <InfoCircleOutlined className="mr-2" />
+                                                            Complete your payment to confirm your appointment
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div id="razorpay-payment-container" className="py-2">
+                                                        <div className="mb-4 grid grid-cols-3 gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                                            <div className="text-left text-sm text-gray-500">Appointment with</div>
+                                                            <div className="col-span-2 text-right font-medium">Dr. {doctor?.firstname || ''} {doctor?.lastname || ''}</div>
+                                                            
+                                                            <div className="text-left text-sm text-gray-500">Date & Time</div>
+                                                            <div className="col-span-2 text-right font-medium">{selectedDate?.format('MMM D, YYYY')} at {selectedTime?.format('h:mm A')}</div>
+                                                            
+                                                            <div className="text-left text-sm text-gray-500">Fee</div>
+                                                            <div className="col-span-2 text-right font-medium text-green-600">₹{doctor?.feePerConsultation || '500'}</div>
+                                                        </div>
+                                                        
+                                                        <RazorpayCheckout 
+                                                            appointmentId={razorpayAppointmentId} 
+                                                            amount={parseInt(doctor?.feePerConsultation) || 500}
+                                                            doctorName={`Dr. ${doctor?.firstname || ''} ${doctor?.lastname || ''}`}
+                                                            onSuccess={handlePaymentSuccess}
+                                                            onFailure={handlePaymentFailure}
+                                                            buttonText="Complete Payment"
+                                                            userObject={user}
+                                                        />
+                                                        
+                                                        <div className="mt-4 flex justify-center space-x-2">
+                                                            <div className="flex items-center">
+                                                                <img src="https://cdn.razorpay.com/logos/visa.svg" alt="Visa" className="h-6 w-auto" />
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <img src="https://cdn.razorpay.com/logos/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <img src="https://cdn.razorpay.com/logos/rupay.svg" alt="RuPay" className="h-6 w-auto" />
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <img src="https://cdn.razorpay.com/logos/upi.svg" alt="UPI" className="h-6 w-auto" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div id="razorpay-error-container" className="mt-4 hidden">
+                                                        <Alert
+                                                            message="Payment Gateway Issue"
+                                                            description={
+                                                                <div className="py-2 text-sm">
+                                                                    <p className="mb-2">We're having trouble loading the payment gateway.</p>
+                                                                    <div className="flex flex-col sm:flex-row justify-center mt-3 gap-2">
+                                                                        <Button size="small" onClick={() => {
+                                                                            document.getElementById('razorpay-error-container').classList.add('hidden');
+                                                                            document.getElementById('razorpay-payment-container').classList.remove('hidden');
+                                                                            setRazorpayAppointmentId(null);
+                                                                            setTimeout(() => setRazorpayAppointmentId(razorpayAppointmentId), 100);
+                                                                        }}>
+                                                                            Try Again
+                                                                        </Button>
+                                                                        <Button size="small" type="primary" onClick={() => {
+                                                                            setPaymentMethod('clinic');
+                                                                            updateAppointmentPaymentMethod(razorpayAppointmentId, 'clinic');
+                                                                        }}>
+                                                                            Pay at Clinic Instead
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            type="error"
+                                                            showIcon
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center justify-center text-xs text-gray-500 mt-3">
+                                                        <LockOutlined className="mr-1" />
+                                                        <span>Secured by </span>
+                                                        <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" className="h-3 ml-1" />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                                    <p className="text-blue-700 flex items-center justify-center text-sm">
+                                                        <InfoCircleOutlined className="mr-2" />
+                                                        Book your appointment, then complete payment
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </Card>
                             </div>
                             
-                            <div>
-                                <Card title="Patient Information" className="mb-4">
+                            <div className="w-full">
+                                <Card title="Patient Information" className="mb-4 overflow-hidden">
                                     <div className="mb-3">
                                         <div className="text-sm text-gray-500">Patient Name</div>
-                                        <div className="font-medium">{user?.name}</div>
+                                        <div className="font-medium truncate">{user?.name || 'Not provided'}</div>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <div className="text-sm text-gray-500">Contact</div>
-                                            <div className="font-medium">{user?.phone || user?.mobile || 'Not provided'}</div>
+                                            <div className="font-medium truncate">{user?.phone || user?.mobile || 'Not provided'}</div>
                                         </div>
                                         
                                         <div>
                                             <div className="text-sm text-gray-500">Email</div>
-                                            <div className="font-medium">{user?.email}</div>
+                                            <div className="font-medium truncate">{user?.email || 'Not provided'}</div>
                                         </div>
                                     </div>
                                 </Card>
                                 
-                                <Card title="Reason for Visit">
+                                <Card title="Reason for Visit" className="overflow-hidden">
                                     <div className="mb-3">
                                         <div className="text-sm text-gray-500">Primary Reason</div>
                                         <div className="font-medium">{appointmentDetails.reason || 'Not specified'}</div>
@@ -1603,26 +1930,30 @@ function BookAppointment() {
                                     {appointmentDetails.symptoms && (
                                         <div className="mb-3">
                                             <div className="text-sm text-gray-500">Symptoms</div>
-                                            <div>{appointmentDetails.symptoms}</div>
+                                            <div className="text-sm break-words">{appointmentDetails.symptoms}</div>
                                         </div>
                                     )}
                                     
                                     {appointmentDetails.additionalNotes && (
                                         <div>
                                             <div className="text-sm text-gray-500">Additional Notes</div>
-                                            <div>{appointmentDetails.additionalNotes}</div>
+                                            <div className="text-sm break-words">{appointmentDetails.additionalNotes}</div>
                                         </div>
                                     )}
                                 </Card>
                             </div>
                         </div>
-                        
+
                         <Alert
                             message="Almost There!"
                             description="Please review all details carefully before confirming your appointment. Once confirmed, a notification will be sent to the doctor."
                             type="warning"
                             showIcon
-                            className="mt-4"
+                            className="mt-5 rounded-xl shadow-sm"
+                            style={{
+                                background: 'linear-gradient(to right, #fff7e6, #fff1d6)',
+                                borderColor: '#ffd591'
+                            }}
                         />
                     </div>
                 </div>
@@ -1704,22 +2035,22 @@ function BookAppointment() {
             console.log("No doctor ID available for testimonials");
             return;
         }
-        
+
         setLoadingTestimonials(true);
-        
+
         try {
             console.log("Fetching testimonials for doctor:", doctorId);
-            
+
             const response = await api.get(API_ENDPOINTS.DOCTOR.GET_TESTIMONIALS, {
                 params: { doctorId }
             });
-            
+
             console.log("Testimonials response:", response.data);
-            
+
             if (response.data.success) {
                 // Get testimonials and fetch patient names for each
                 const testimonialData = response.data.data.testimonials || [];
-                
+
                 // Fetch patient details for testimonials if needed
                 const enhancedTestimonials = await Promise.all(
                     testimonialData.map(async (testimonial) => {
@@ -1727,14 +2058,14 @@ function BookAppointment() {
                         if (testimonial.patientName) {
                             return testimonial;
                         }
-                        
+
                         // Otherwise, try to fetch patient details
                         try {
                             if (testimonial.patientId) {
                                 const patientResponse = await api.get(API_ENDPOINTS.USER.GET_PATIENT_INFO, {
                                     params: { userId: testimonial.patientId }
                                 });
-                                
+
                                 if (patientResponse.data.success) {
                                     // Add patient name to testimonial if showAsTestimonial is true
                                     if (testimonial.showAsTestimonial) {
@@ -1752,14 +2083,14 @@ function BookAppointment() {
                         }
                     })
                 );
-                
+
                 // Only keep testimonials with showAsTestimonial=true
                 const filteredTestimonials = enhancedTestimonials.filter(
                     testimonial => testimonial.showAsTestimonial
                 );
-                
+
                 setTestimonials(filteredTestimonials);
-                
+
                 // Get the average rating from all ratings (not just testimonials)
                 const { averageRating, totalReviews } = response.data.data;
                 setTestimonialStats({
@@ -1779,7 +2110,7 @@ function BookAppointment() {
             setLoadingTestimonials(false);
         }
     };
-    
+
     // Update the useEffect to fetch testimonials along with doctor info
     useEffect(() => {
         if (doctorId) {
@@ -1826,16 +2157,16 @@ function BookAppointment() {
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-8">
                         <div className="flex flex-col md:flex-row md:items-center">
                             <Button
-                                icon={<ArrowLeftOutlined />} 
+                                icon={<ArrowLeftOutlined />}
                                 onClick={() => navigate(-1)}
                                 className="self-start mb-4 md:mb-0 md:mr-6 bg-white hover:bg-gray-50"
                             >
                                 Back
                             </Button>
-                            
+
                             <div className="flex flex-col md:flex-row items-start md:items-center">
                                 <div className="doctor-image mr-6 mb-4 md:mb-0 relative">
-                                    <img 
+                                    <img
                                         src={doctor.image || "https://via.placeholder.com/100x100"}
                                         alt={`Dr. ${doctor.firstname} ${doctor.lastname}`}
                                         className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 object-cover rounded-full border-4 border-white shadow-md"
@@ -1846,7 +2177,7 @@ function BookAppointment() {
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <div>
                                     <h1 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1'>
                                         Dr. {doctor.firstname} {doctor.lastname}
@@ -1870,7 +2201,7 @@ function BookAppointment() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6 bg-white p-3 sm:p-4 rounded-lg shadow-sm">
                             <div className="flex items-center">
                                 <div className="p-2 sm:p-3 rounded-full bg-blue-50 mr-3">
@@ -1882,50 +2213,50 @@ function BookAppointment() {
                                         {(() => {
                                             // (existing code to get consultation hours)
                                             if (!doctor) return 'Consultation hours not available';
-                                            
+
                                             const timingValues = extractTimingValues(doctor.timing);
-                                            
+
                                             if (!timingValues || !Array.isArray(timingValues) || timingValues.length < 2) {
                                                 return 'Consultation hours not specified';
                                             }
-                                            
+
                                             let startTimeStr = timingValues[0];
                                             let endTimeStr = timingValues[1];
-                                            
+
                                             if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
                                                 startTimeStr = startTimeStr.split('T')[1].substring(0, 5);
                                             }
-                                            
+
                                             if (typeof endTimeStr === 'string' && endTimeStr.includes('T')) {
                                                 endTimeStr = endTimeStr.split('T')[1].substring(0, 5);
                                             }
-                                            
+
                                             // Handle empty or invalid time strings
                                             if (!startTimeStr || startTimeStr === 'null' || startTimeStr === 'undefined' ||
                                                 !endTimeStr || endTimeStr === 'null' || endTimeStr === 'undefined') {
                                                 return 'Consultation hours not available';
                                             }
-                                            
+
                                             // Remove any quotes around the time strings
                                             startTimeStr = startTimeStr.replace(/"/g, '');
                                             endTimeStr = endTimeStr.replace(/"/g, '');
-                                            
+
                                             // Create moment objects with strict parsing to ensure they're valid
                                             const startTime = moment(startTimeStr, 'HH:mm', true);
                                             const endTime = moment(endTimeStr, 'HH:mm', true);
-                                            
+
                                             // Format for display
                                             if (startTime.isValid() && endTime.isValid()) {
                                                 return `${startTime.format('h:mm A')} - ${endTime.format('h:mm A')}`;
                                             }
-                                            
+
                                             // If all else fails
                                             return 'Consultation hours not available';
                                         })()}
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center">
                                 <div className="p-3 rounded-full bg-green-50 mr-3">
                                     <MedicineBoxOutlined className="text-green-500 text-xl" />
@@ -1935,7 +2266,7 @@ function BookAppointment() {
                                     <p className="font-medium text-green-600">₹{doctor?.feePerConsultation || 'Consultation fee'}</p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center">
                                 <div className="p-3 rounded-full bg-red-50 mr-3">
                                     <PhoneOutlined className="text-red-500 text-xl" />
@@ -1953,14 +2284,14 @@ function BookAppointment() {
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Doctor Details Section */}
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                         <h3 className="text-lg font-semibold mb-4 flex items-center">
                             <UserOutlined className="mr-2 text-blue-500" />
                             Doctor Information
                         </h3>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <div className="mb-4">
@@ -1969,15 +2300,15 @@ function BookAppointment() {
                                         {(() => {
                                             // First check if doctor exists
                                             if (!doctor) return 'General Practice';
-                                            
+
                                             // Handle various specialization formats
                                             if (!doctor.specialization) return doctor.department || 'General Practice';
-                                            
+
                                             // If array, join with commas
                                             if (Array.isArray(doctor.specialization)) {
                                                 return doctor.specialization.join(', ');
                                             }
-                                            
+
                                             // If string but looks like array (has brackets)
                                             if (typeof doctor.specialization === 'string') {
                                                 if (doctor.specialization.startsWith('[') && doctor.specialization.endsWith(']')) {
@@ -1991,7 +2322,7 @@ function BookAppointment() {
                                                 }
                                                 return doctor.specialization;
                                             }
-                                            
+
                                             return 'General Practice';
                                         })()}
                                     </p>
@@ -2005,7 +2336,7 @@ function BookAppointment() {
                                     <p className="font-medium">{doctor.languages || 'English, Hindi'}</p>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <div className="mb-4">
                                     <p className="text-gray-500 text-sm mb-1">Location</p>
@@ -2026,14 +2357,14 @@ function BookAppointment() {
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Add Testimonials Section */}
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                         <h3 className="text-lg font-semibold mb-4 flex items-center">
                             <StarOutlined className="mr-2 text-yellow-500" />
                             Patient Testimonials
                         </h3>
-                        
+
                         <div className="bg-white p-6 rounded-lg shadow">
                             {loadingTestimonials ? (
                                 <div className="flex justify-center py-8">
@@ -2088,44 +2419,55 @@ function BookAppointment() {
                             )}
                         </div>
                     </div>
-                    
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <Steps current={currentStep} className="mb-8">
+
+                    <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                        <Steps current={currentStep} className="mb-8" responsive={true}>
                             <Step title="Select Date & Time" icon={<CalendarOutlined />} />
                             <Step title="Patient Details" icon={<UserOutlined />} />
                             <Step title="Confirmation" icon={<CheckCircleOutlined />} />
                         </Steps>
-                        
+
                         <div className="steps-content p-4">
                             {steps[currentStep].content}
                         </div>
-                        
+
                         <div className="steps-action mt-8 flex justify-between">
                             {currentStep > 0 && (
                                 <Button onClick={prevStep} size="large">
                                     Previous
                                 </Button>
                             )}
-                            
+
                             {currentStep < steps.length - 1 && (
                                 <Button type="primary" onClick={nextStep} size="large">
                                     Next
                                 </Button>
                             )}
-                            
+
                             {currentStep === steps.length - 1 && (
                                 <Button
-                                    type="primary" 
+                                    type="primary"
                                     onClick={bookAppointment}
                                     loading={loading}
                                     size="large"
-                                    className="bg-green-600 hover:bg-green-700"
+                                    className={`${paymentMethod === 'razorpay'
+                                        ? 'bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700'
+                                        : 'bg-blue-600 hover:bg-blue-700 border-blue-600 hover:border-blue-700'} 
+                                        h-auto py-3 px-6 rounded-lg shadow-md flex items-center justify-center text-base`}
+                                    disabled={!paymentMethod || (paymentMethod === 'razorpay' && razorpayAppointmentId !== null)}
+                                    icon={paymentMethod === 'razorpay' ? <CreditCardOutlined /> : <CalendarOutlined />}
                                 >
-                                    Confirm Appointment
+                                    {!paymentMethod
+                                        ? 'Please Select Payment Method'
+                                        : (paymentMethod === 'clinic'
+                                            ? 'Confirm & Pay at Clinic'
+                                            : (razorpayAppointmentId
+                                                ? 'Please Complete Payment Above'
+                                                : 'Book & Proceed to Payment'))}
                                 </Button>
                             )}
-                            </div>
                         </div>
+                    </div>
 
                     {/* Suggested Slots Modal */}
                     <Modal
@@ -2136,12 +2478,12 @@ function BookAppointment() {
                     >
                         <div>
                             <p className="mb-4">No slots are available on your selected date. Here are some other available options:</p>
-                            
+
                             {suggestedSlots.length > 0 ? (
                                 <div className="suggested-slots">
                                     {suggestedSlots.map((slot, index) => (
-                                        <div 
-                                            key={index} 
+                                        <div
+                                            key={index}
                                             className="suggested-slot p-3 mb-3 border rounded-md hover:bg-blue-50 cursor-pointer"
                                             onClick={() => handleSelectSuggestion(slot)}
                                         >
@@ -2150,9 +2492,9 @@ function BookAppointment() {
                                                     <Badge status="success" />
                                                     <span className="ml-2 font-medium">{slot.date.format('dddd, MMMM D, YYYY')}</span>
                                                     <p className="ml-5 text-gray-600">{slot.formattedTime}</p>
-                        </div>
+                                                </div>
                                                 <Button type="primary" size="small">Select</Button>
-                    </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -2166,7 +2508,7 @@ function BookAppointment() {
                             )}
                         </div>
                     </Modal>
-                    </div>
+                </div>
             ) : (
                 <div className="flex flex-col justify-center items-center h-96">
                     <Spin size="large" />
@@ -2185,22 +2527,22 @@ window.testBatchSlotCheck = async (doctorId, date) => {
     try {
         console.log(`Testing batch slot check for doctor: ${doctorId}, date: ${date}`);
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
             console.error("No auth token available");
             return { success: false, error: "No auth token" };
         }
-        
+
         // For a raw date string, ensure it's in YYYY-MM-DD format
         let formattedDate = date;
-        
+
         // If it's in DD-MM-YYYY format, convert it to YYYY-MM-DD
         if (date.match(/^\d{2}-\d{2}-\d{4}$/)) {
             const [day, month, year] = date.split('-');
             formattedDate = `${year}-${month}-${day}`;
             console.log("Converted date format from DD-MM-YYYY to YYYY-MM-DD:", formattedDate);
         }
-        
+
         const response = await apiFetch(`user/check-booked-slots`, {
             method: 'POST',
             headers: {
@@ -2212,7 +2554,7 @@ window.testBatchSlotCheck = async (doctorId, date) => {
                 date: formattedDate // format: YYYY-MM-DD
             })
         });
-        
+
         const data = await response.json();
         console.log("API Response:", data);
         return data;

@@ -72,19 +72,15 @@ const Home = () => {
   const getAppointments = async () => {
     if (user?._id) {
       try {
-        console.log("Fetching appointments for user:", user._id, "isDoctor:", user?.isDoctor);
         
         // Helper to try the fallback endpoint
         const tryFallbackEndpoint = async () => {
           try {
-            console.log("Trying fallback endpoint");
-            
             // Different fallback endpoints for doctor vs patient
             let fallbackEndpoint = getApiUrl(`user/appointments/${user._id}`);
             
             if (user?.isDoctor) {
               fallbackEndpoint = getApiUrl(`doctor/get-doctor-appointments/${user._id}`);
-              console.log("Using doctor fallback endpoint");
             }
             
             const fallbackResponse = await axios.get(fallbackEndpoint, {
@@ -92,8 +88,6 @@ const Home = () => {
                 Authorization: 'Bearer ' + localStorage.getItem('token'),
               },
             });
-            
-            console.log("Fallback API Response:", fallbackResponse.data);
             
             if (fallbackResponse.data.success) {
               let allAppointments = [];
@@ -116,19 +110,14 @@ const Home = () => {
                 }
               }
               
-              console.log("Fallback appointments:", allAppointments);
               
               const upcoming = allAppointments.filter(apt => {
                 // Try to parse date regardless of format
                 const aptDate = moment(apt.date || apt.appointmentDate);
                 const isUpcoming = aptDate.isValid() ? aptDate.isAfter(moment().startOf('day')) : false;
-                
-                console.log(`Fallback Appointment: Date: ${apt.date || apt.appointmentDate}, Valid: ${aptDate.isValid()}, Format: ${aptDate.format('YYYY-MM-DD')}, Status: ${apt.status || 'unknown'}, IsUpcoming: ${isUpcoming}`);
-                
                 return isUpcoming;
               }).sort((a, b) => moment(a.date || a.appointmentDate).diff(moment(b.date || b.appointmentDate)));
               
-              console.log("Fallback filtered appointments:", upcoming);
               setUpcomingAppointments(upcoming);
             }
           } catch (fallbackError) {
@@ -142,7 +131,6 @@ const Home = () => {
         // If the user is a doctor, use the doctor appointments endpoint
         if (user?.isDoctor) {
           endpoint = getApiUrl(`doctor/appointments`);
-          console.log("Using doctor endpoint for appointments:", endpoint);
           
           // Doctor-specific appointment fetch
           try {
@@ -152,7 +140,6 @@ const Home = () => {
               },
             });
             
-            console.log("Doctor API Response:", doctorResponse.data);
             
             if (doctorResponse.data.success) {
               // Extract patients (appointments) with multiple fallbacks
@@ -166,16 +153,9 @@ const Home = () => {
                 allAppointments = doctorResponse.data.data;
               }
               
-              console.log("All doctor appointments:", allAppointments);
-              
-              // For doctors, we want to show pending and approved appointments
               const upcoming = allAppointments.filter(apt => {
-                console.log("Doctor appointment details:", apt);
-                
                 // For doctors, accept approved appointments
                 const validStatus = apt.status === 'approved' || apt.status === 'pending';
-                console.log(`Appointment status: ${apt.status}, Valid: ${validStatus}`);
-                
                 // Try multiple date formats
                 let aptDate;
                 if (apt.date) {
@@ -200,13 +180,10 @@ const Home = () => {
                 const isUpcoming = aptDate && aptDate.isValid() ? 
                   aptDate.isSameOrAfter(moment().startOf('day')) : false;
                 
-                console.log(`Date: ${apt.date || apt.appointmentDate}, Parsed: ${aptDate ? aptDate.format('YYYY-MM-DD') : 'Invalid'}, IsUpcoming: ${isUpcoming}`);
-                
                 // Accept if it's upcoming and has valid status
                 return validStatus && isUpcoming;
               });
               
-              console.log("Filtered doctor appointments:", upcoming);
               
               if (upcoming.length > 0) {
                 setUpcomingAppointments(upcoming);
@@ -215,7 +192,6 @@ const Home = () => {
             }
             
             // Try secondary doctor endpoint for approved appointments
-            console.log("No appointments from primary endpoint, trying secondary doctor endpoint");
             const secondaryEndpoint = getApiUrl(`doctor/approved-appointments`);
             const secondaryResponse = await axios.get(secondaryEndpoint, {
               headers: {
@@ -223,7 +199,6 @@ const Home = () => {
               },
             });
             
-            console.log("Secondary Doctor API Response:", secondaryResponse.data);
             
             if (secondaryResponse.data.success) {
               let secondaryAppointments = [];
@@ -264,8 +239,6 @@ const Home = () => {
                 return;
               }
             }
-            
-            console.log("No upcoming doctor appointments found, trying fallback");
             await tryFallbackEndpoint();
           } catch (doctorError) {
             console.error("Error fetching doctor appointments:", doctorError);

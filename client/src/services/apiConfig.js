@@ -30,6 +30,7 @@ const API_ENDPOINTS = {
     CHECK_BOOKED_SLOTS: 'user/check-booked-slots',
     CHECK_BOOK_AVAILABILITY: 'user/check-book-availability',
     GET_PATIENT_INFO: 'user/get-patient-info',
+    UPDATE_APPOINTMENT_PAYMENT_METHOD: 'user/update-appointment-payment-method',
   },
   
   // Doctor endpoints
@@ -51,6 +52,14 @@ const API_ENDPOINTS = {
     EMAIL_MEDICAL_RECORD: (recordId) => `doctor/email-medical-record/${recordId}`,
     UPDATE_AVAILABILITY: 'doctor/update-availability',
     GET_TESTIMONIALS: 'doctor/get-doctor-testimonials',
+  },
+  
+  // Payment endpoints
+  PAYMENT: {
+    CREATE_ORDER: 'payment/create-order',
+    VERIFY_PAYMENT: 'payment/verify-payment',
+    GET_PAYMENT_DETAILS: (appointmentId) => `payment/get-details/${appointmentId}`,
+    UPDATE_PAYMENT_STATUS: 'payment/update-status',
   },
   
   // Admin endpoints

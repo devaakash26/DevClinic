@@ -54,7 +54,7 @@ const appointmentSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "pending",
-        enum: ["pending", "approved", "rejected", "completed", "cancelled"]
+        enum: ["pending", "approved", "rejected", "completed", "cancelled", "pending-payment"]
     },
     rejectionReason: {
         type: String,
@@ -63,6 +63,20 @@ const appointmentSchema = new mongoose.Schema({
     feedbackProvided: {
         type: Boolean,
         default: false
+    },
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed", "refunded"],
+        default: "pending"
+    },
+    paymentMethod: {
+        type: String,
+        enum: ["clinic", "razorpay"],
+        default: "clinic"
+    },
+    paymentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'payments'
     }
 }, {
     timestamps: true

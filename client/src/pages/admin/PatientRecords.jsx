@@ -74,7 +74,6 @@ const PatientRecords = () => {
         setPatients(patientData);
         setFilteredPatients(patientData);
         calculateStatistics(patientData);
-        message.success('Patient records loaded successfully');
       } else {
         message.error(response.data.message || 'Failed to load patient records');
       }

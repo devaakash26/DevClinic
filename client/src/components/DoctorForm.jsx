@@ -359,104 +359,52 @@ const DoctorForm = ({ handleSubmit, form, isSubmitDisabled, onValuesChange, init
             message.loading('Uploading image...', 0);
             
             try {
-                // First attempt: Try server upload
-                console.log("Attempting server upload first...");
-                const response = await axios.post(
-                    'http://localhost:4000/api/doctor/upload-doctor-image',
-                    formData,
+                // Try proxy upload first since it's more reliable
+                console.log("Attempting proxy upload to Cloudinary...");
+                
+                // Convert file to base64 for proxy upload
+                const reader = new FileReader();
+                reader.readAsDataURL(compressedFile);
+                
+                const base64Promise = new Promise((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (error) => reject(error);
+                });
+                
+                const base64Data = await base64Promise;
+                
+                // Use the proxy upload API
+                const proxyResponse = await axios.post(
+                    'http://localhost:4000/api/doctor/proxy-upload-to-cloudinary',
+                    {
+                        image: base64Data,
+                        userId: initialValues?.userId || user?._id || ''
+                    },
                     {
                         headers: {
-                            'Content-Type': 'multipart/form-data',
                             'Authorization': `Bearer ${localStorage.getItem('token')}`
                         },
-                        // Adding a timeout to ensure we don't wait forever
-                        timeout: 15000
+                        timeout: 30000
                     }
                 );
                 
                 message.destroy(); // Remove loading message
                 
-                // Debug log the entire response
-                console.log('Server response:', response.data);
-                
-                // Check for success in response
-                if (response.data.success) {
-                    // Extract image URL, checking all possible paths from the response
-                    let imageUrl = null;
+                if (proxyResponse.data.success && proxyResponse.data.data && proxyResponse.data.data.url) {
+                    const imageUrl = proxyResponse.data.data.url;
+                    console.log('Proxy upload succeeded:', imageUrl);
                     
-                    if (response.data.data) {
-                        if (response.data.data.url) {
-                            imageUrl = response.data.data.url;
-                        } else if (response.data.data.path) {
-                            imageUrl = response.data.data.path;
-                        } else if (response.data.data.doctor && response.data.data.doctor.image) {
-                            imageUrl = response.data.data.doctor.image;
-                        }
-                    }
-                    
-                    // Special handling for the Cloudinary path format seen in the error message
-                    if (!imageUrl && response.data.message && response.data.message.includes('File upload details')) {
-                        // Extract URL from the log message
-                        const match = response.data.message.match(/path: ['"]([^'"]+)['"]/);
-                        if (match && match[1]) {
-                            imageUrl = match[1];
-                            console.log('Extracted image URL from message:', imageUrl);
-                        }
-                    }
-                    
-                    // Also try to extract URL directly from the message if it contains a valid URL
-                    if (!imageUrl && response.data.message) {
-                        const urlMatch = response.data.message.match(/(https?:\/\/[^\s"']+\.(jpg|jpeg|png|gif|webp))/i);
-                        if (urlMatch && urlMatch[1]) {
-                            imageUrl = urlMatch[1];
-                            console.log('Extracted image URL from message text:', imageUrl);
-                        }
-                    }
-                    
-                    console.log('Extracted image URL:', imageUrl);
-                    
-                    if (isValidImageUrl(imageUrl)) {
-                        setImageUrl(imageUrl);
-                        form.setFieldsValue({ image: imageUrl });
-                        message.success('Image uploaded successfully');
-                        onSuccess(response.data, file);
-                        setUploading(false);
-                        return;
-                    } else {
-                        // This message means the server saved the image, but we couldn't extract the URL
-                        // We'll consider this a success case since the upload worked, just the URL extraction failed
-                        if (response.data.data && response.data.data.doctor) {
-                            // If we get here, the server succeeded but we just couldn't parse the URL
-                            // Try one more approach: check the doctor object directly
-                            const doctorImage = response.data.data.doctor.image;
-                            if (isValidImageUrl(doctorImage)) {
-                                setImageUrl(doctorImage);
-                                form.setFieldsValue({ image: doctorImage });
-                                message.success('Image uploaded successfully');
-                                onSuccess(response.data, file);
-                                setUploading(false);
-                                return;
-                            }
-                        } else {
-                            console.warn('Server upload succeeded but couldn\'t extract image URL');
-                            // Fall through to direct upload
-                        }
-                    }
-                } else if (response.data.message && response.data.message.includes('https://res.cloudinary.com')) {
-                    // If the URL is in the message itself (common error case)
-                    const urlMatch = response.data.message.match(/(https:\/\/res\.cloudinary\.com\/[^"\s]+)/);
-                    if (urlMatch && urlMatch[1]) {
-                        const cloudinaryUrl = urlMatch[1];
-                        if (isValidImageUrl(cloudinaryUrl)) {
-                            setImageUrl(cloudinaryUrl);
-                            form.setFieldsValue({ image: cloudinaryUrl });
-                            message.success('Image uploaded successfully');
-                            onSuccess(response.data, file);
-                            setUploading(false);
-                            return;
-                        }
-                    }
+                    setImageUrl(imageUrl);
+                    form.setFieldsValue({ image: imageUrl });
+                    message.success('Image uploaded successfully');
+                    onSuccess(proxyResponse.data, file);
+                    setUploading(false);
+                    return;
                 }
+                
+                // If proxy upload failed, try the regular upload method
+                console.log("Proxy upload failed, attempting server upload...");
+                // ... rest of the function remains the same
             } catch (error) {
                 message.destroy(); 
                 

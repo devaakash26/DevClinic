@@ -8,6 +8,7 @@ import { showLoading, hideLoading } from '../redux/loader';
 import { setUser } from '../redux/userInfo';
 import Layout from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../utils/apiUtils';
 
 const { TabPane } = Tabs;
 

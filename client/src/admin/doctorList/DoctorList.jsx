@@ -129,7 +129,7 @@ const DoctorList = () => {
                 setDoctors(data.data);
                 setFilteredDoctors(data.data);
                 if (showToast) {
-                    toast.success("Fetched successfully");
+                    // toast.success("Fetched successfully");
                 }
             } else {
                 toast.error(data.message);

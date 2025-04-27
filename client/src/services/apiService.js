@@ -21,11 +21,6 @@ export const getApiUrl = (endpoint) => {
 // Socket URL with explicit configuration to avoid path issues
 export const SOCKET_URL = SERVER_URL;
 
-// Debug URLs
-console.log("API Base URL:", API_BASE_URL);
-console.log("Server URL:", SERVER_URL);
-console.log("Socket URL:", SOCKET_URL);
-
 // Create a custom fetch with retry logic
 export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
   let retries = 0;

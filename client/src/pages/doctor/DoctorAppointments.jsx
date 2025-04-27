@@ -22,7 +22,8 @@ import {
   Col,
   Tabs,
   Divider,
-  Popconfirm
+  Popconfirm,
+  Alert
 } from 'antd';
 import { 
   CheckCircleOutlined, 
@@ -538,7 +539,73 @@ const DoctorAppointments = () => {
                     )}
                   </Timeline>
                 </TabPane>
-                <TabPane tab="Communication" key="3">
+                <TabPane tab="Payment Information" key="3">
+                  <Card className="shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <Tag color={selectedAppointment.paymentStatus === 'paid' ? 'green' : 
+                                  selectedAppointment.paymentStatus === 'failed' ? 'red' : 'orange'} 
+                                    className="mr-2 text-base px-3 py-1">
+                          {selectedAppointment.paymentStatus === 'paid' ? 'PAID' : 
+                           selectedAppointment.paymentStatus === 'failed' ? 'FAILED' : 'PENDING'}
+                        </Tag>
+                        <span className="font-medium text-lg">
+                          Payment Status: {selectedAppointment.paymentStatus === 'paid' ? 'Paid' : 
+                                          selectedAppointment.paymentStatus === 'failed' ? 'Failed' : 'Pending'}
+                        </span>
+                      </div>
+                      
+                      <Divider />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-gray-500 mb-1">Payment Method</p>
+                          <p className="font-medium capitalize">
+                            {selectedAppointment.paymentMethod === 'razorpay' ? 'Online Payment (Razorpay)' : 'Payment at Clinic'}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-gray-500 mb-1">Consultation Fee</p>
+                          <p className="font-medium">₹{selectedAppointment.doctorInfo?.feePerConsultation || 'Not specified'}</p>
+                        </div>
+                        
+                        {selectedAppointment.paymentStatus === 'paid' && selectedAppointment.paymentId && (
+                          <>
+                            <div>
+                              <p className="text-gray-500 mb-1">Payment ID</p>
+                              <p className="font-medium">{selectedAppointment.paymentId}</p>
+                            </div>
+                            
+                            <div>
+                              <p className="text-gray-500 mb-1">Payment Date</p>
+                              <p className="font-medium">{moment(selectedAppointment.updatedAt).format('DD MMM YYYY, h:mm A')}</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      
+                      {selectedAppointment.paymentStatus === 'pending' && (
+                        <Alert 
+                          message="Payment Pending" 
+                          description="Patient will pay during their visit to the clinic." 
+                          type="warning" 
+                          showIcon 
+                        />
+                      )}
+                      
+                      {selectedAppointment.paymentStatus === 'failed' && (
+                        <Alert 
+                          message="Payment Failed" 
+                          description="The online payment attempt failed. Patient may pay during their visit to the clinic." 
+                          type="error" 
+                          showIcon 
+                        />
+                      )}
+                    </div>
+                  </Card>
+                </TabPane>
+                <TabPane tab="Communication" key="4">
                   <div className="space-y-4">
                     <div className="flex items-center">
                       <MessageOutlined className="mr-2 text-blue-500" />

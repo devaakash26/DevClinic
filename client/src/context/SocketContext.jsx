@@ -27,7 +27,6 @@ export const SocketProvider = ({ children }) => {
     
     // Initialize socket connection only once with reconnection options
     useEffect(() => {
-        console.log("Initializing socket connection to:", SOCKET_URL);
         const newSocket = io(SOCKET_URL, {
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
@@ -116,17 +115,17 @@ export const SocketProvider = ({ children }) => {
         });
         
         socket.on('reconnect_failed', () => {
-            console.log("Failed to reconnect to socket server");
+            // console.log("Failed to reconnect to socket server");
             toast.error("Could not reconnect to notification server. Please refresh the page.");
         });
         
         // If already connected, register the user
         if (socket.connected) {
-            console.log("Socket already connected, registering user immediately");
+            // console.log("Socket already connected, registering user immediately");
             connectUser();
             setIsConnected(true);
         } else {
-            console.log("Socket not connected yet, will register when connected");
+            // console.log("Socket not connected yet, will register when connected");
         }
         
         return () => {
@@ -143,7 +142,6 @@ export const SocketProvider = ({ children }) => {
     useEffect(() => {
         if (!socket || !user?._id || listenersSetupRef.current) return;
         
-        console.log("Setting up notification listeners for user:", user._id);
         
         const handleNotification = (data) => {
             // Check if we're already on the notifications page to avoid redundant toasts
@@ -156,7 +154,6 @@ export const SocketProvider = ({ children }) => {
             
             // Skip notifications not meant for this user
             if (data.userId && user && data.userId !== user._id.toString()) {
-                console.log(`Ignoring notification for user ${data.userId} (current user: ${user._id})`);
                 return;
             }
             
@@ -175,7 +172,6 @@ export const SocketProvider = ({ children }) => {
                     );
                     
                     if (!existingNotification) {
-                        console.log("Adding new notification to user state:", notification);
                         const updatedUser = {
                             ...user,
                             unseenNotification: [...(user.unseenNotification || []), notification]
@@ -187,7 +183,7 @@ export const SocketProvider = ({ children }) => {
                             toast.success('New notification received!');
                         }
                     } else {
-                        console.log("Duplicate notification detected, not adding:", notification._id);
+                        // console.log("Duplicate notification detected, not adding:", notification._id);
                     }
                 }
             }

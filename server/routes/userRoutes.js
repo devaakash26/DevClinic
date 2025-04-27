@@ -861,7 +861,9 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       medicalHistory, 
       preferredCommunication,
       emergencyContact,
-      additionalNotes
+      additionalNotes,
+      paymentMethod,
+      status
     } = req.body;
     
     // Make sure we have all required fields
@@ -894,7 +896,7 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       doctorId,
       date: formattedDate,
       time: formattedTime,
-      status: { $ne: "cancelled" }, // Exclude cancelled appointments
+      status: { $nin: ["cancelled", "rejected"] }, // Exclude cancelled and rejected appointments
     });
 
     if (existingAppointment) {
@@ -906,6 +908,13 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     }
 
     console.log("Creating new appointment with model:", typeof Appointments);
+    
+    // Determine initial status
+    // If payment method is razorpay and status is pending-payment, use pending-payment
+    // Otherwise use default "pending"
+    const initialStatus = (paymentMethod === 'razorpay' && status === 'pending-payment') 
+      ? 'pending-payment' 
+      : 'pending';
     
     // Create the appointment
     const newAppointment = new Appointments({
@@ -921,146 +930,39 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       preferredCommunication: preferredCommunication || "phone",
       emergencyContact: emergencyContact || "",
       additionalNotes: additionalNotes || "",
-      status: "pending",
+      status: initialStatus,
+      paymentMethod: paymentMethod || "clinic",
+      paymentStatus: "pending"
     });
 
     console.log("Saving appointment to database...");
     await newAppointment.save();
     console.log("Appointment saved successfully:", newAppointment._id);
     
-    // Send notification to doctor
-    const unseenNotifications = doctorUser.unseenNotification || [];
-    unseenNotifications.push({
-      type: "new-appointment-request",
-      message: `A new appointment request from ${userInfo.name} for ${formattedDate} at ${moment(formattedTime, "HH:mm").format("hh:mm A")}`,
-      data: {
-        appointmentId: newAppointment._id,
-        userInfo: userInfo,
-        date: formattedDate,
-        time: formattedTime,
-      },
-      onClickPath: "/doctor/appointments",
-    });
-    
-    await User.findByIdAndUpdate(doctorId, { unseenNotification: unseenNotifications });
-    console.log("Doctor notification sent successfully");
-    
-    // Emit socket event for real-time notification
-    try {
-      const io = req.app.get("io");
-      if (io) {
-        const notificationObj = {
-          _id: new mongoose.Types.ObjectId().toString(),
-          type: "new-appointment-request",
-          message: `A new appointment request from ${userInfo.name} for ${formattedDate} at ${moment(formattedTime, "HH:mm").format("hh:mm A")}`,
-          data: {
-            appointmentId: newAppointment._id,
-            userInfo: userInfo,
-            date: formattedDate,
-            time: formattedTime,
-          },
-          onClickPath: "/doctor/appointments",
-          createdAt: new Date()
-        };
-        
-        io.to(`user_${doctorId}`).emit("receive_notification", {
-          userId: doctorId,
-          notification: notificationObj
-        });
-        console.log("Real-time notification sent via socket");
-      }
-    } catch (error) {
-      console.error("Socket emit error:", error);
-    }
-
-    // Send email notifications
-    try {
-      // Prepare appointment details for email
-      const formattedStartTime = `${formattedDate} ${formattedTime}`;
-      console.log("Email date-time string:", formattedStartTime);
-      
-      // Validate with moment before sending
-      const isValidDateTime = moment(formattedStartTime, 'DD-MM-YYYY HH:mm').isValid();
-      console.log("Date-time validation:", { 
-        isValid: isValidDateTime, 
-        momentParsed: moment(formattedStartTime, 'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm') 
+    // Only send notification to doctor if status is "pending" (not for pending-payment)
+    if (initialStatus === 'pending') {
+      const unseenNotifications = doctorUser.unseenNotification || [];
+      unseenNotifications.push({
+        type: "new-appointment-request",
+        message: `A new appointment request from ${userInfo.name} for ${formattedDate} at ${moment(formattedTime, "HH:mm").format("hh:mm A")}`,
+        data: {
+          appointmentId: newAppointment._id,
+          userInfo: userInfo,
+          date: formattedDate,
+          time: formattedTime,
+        },
+        onClickPath: "/doctor/appointments",
       });
       
-      const appointmentDetails = {
-        reason,
-        startTime: formattedStartTime,
-        symptoms,
-        medicalHistory
-      };
-
-      // Send confirmation email to patient
-      const patientEmail = userInfo.email;
-      const patientName = userInfo.name;
-      
-      if (patientEmail) {
-        sendAppointmentRequestedPatientEmail(patientEmail, patientName, appointmentDetails)
-          .then(success => {
-            console.log(`Patient email notification ${success ? 'sent' : 'failed'}`);
-          })
-          .catch(err => console.error("Error in patient email notification:", err));
-      }
-
-      // Send notification email to doctor
-      console.log("Doctor user object:", {
-        id: doctorUser._id,
-        email: doctorUser.email,
-        name: doctorUser.name
-      });
-      console.log("Doctor info object:", {
-        firstname: doctorInfo.firstname,
-        lastname: doctorInfo.lastname,
-        email: doctorInfo.email
-      });
-      
-      // First try to get email from the User model
-      let doctorEmail = doctorUser.email;
-      
-      // If not available in User model, try doctorInfo
-      if (!doctorEmail && doctorInfo && doctorInfo.email) {
-        doctorEmail = doctorInfo.email;
-        console.log("Using doctor email from doctorInfo:", doctorEmail);
-      }
-      
-      // Check directly accessing the Doctor model if still not found
-      if (!doctorEmail) {
-        try {
-          const Doctor = require("../models/Doctor");
-          const doctorRecord = await Doctor.findOne({ userId: doctorId });
-          if (doctorRecord && doctorRecord.email) {
-            doctorEmail = doctorRecord.email;
-            console.log("Using doctor email from Doctor model:", doctorEmail);
-          }
-        } catch (err) {
-          console.error("Error fetching doctor from Doctor model:", err);
-        }
-      }
-      
-      const doctorName = `${doctorInfo.firstname} ${doctorInfo.lastname}`;
-      console.log("Doctor name:", doctorName);
-      
-      if (doctorEmail) {
-        console.log("Sending email to doctor:", doctorEmail);
-        sendAppointmentRequestedDoctorEmail(doctorEmail, doctorName, patientName, appointmentDetails)
-          .then(success => {
-            console.log(`Doctor email notification ${success ? 'sent' : 'failed'}`);
-          })
-          .catch(err => console.error("Error in doctor email notification:", err));
-      } else {
-        console.error("Doctor email not found, cannot send notification email");
-      }
-    } catch (emailError) {
-      console.error("Error sending email notifications:", emailError);
-      // Continue with the response even if email sending fails
+      await User.findByIdAndUpdate(doctorId, { unseenNotification: unseenNotifications });
+      console.log("Doctor notification sent successfully");
+    } else {
+      console.log("Skipping doctor notification for pending-payment status");
     }
 
     res.status(200).send({
+      message: "Appointment booked successfully",
       success: true,
-      message: "Appointment booked successfully!",
       data: newAppointment,
     });
   } catch (error) {
@@ -1820,6 +1722,60 @@ router.post("/resend-verification", async (req, res) => {
             success: false
         });
     }
+});
+
+// Add a new endpoint to update appointment payment method
+router.post('/update-appointment-payment-method', authMiddleware, async (req, res) => {
+  try {
+    const { appointmentId, paymentMethod } = req.body;
+    
+    if (!appointmentId || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Appointment ID and payment method are required'
+      });
+    }
+    
+    // Validate payment method
+    if (!['clinic', 'razorpay'].includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment method. Must be "clinic" or "razorpay"'
+      });
+    }
+    
+    // Find and update the appointment
+    const appointment = await Appointments.findByIdAndUpdate(
+      appointmentId,
+      {
+        paymentMethod,
+        // If changing to clinic payment from online, update status to pending
+        ...(paymentMethod === 'clinic' && { status: 'pending', paymentStatus: 'pending' })
+      },
+      { new: true }
+    );
+    
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment payment method updated successfully',
+      data: appointment
+    });
+    
+  } catch (error) {
+    console.error('Error updating appointment payment method:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error updating appointment payment method',
+      error: error.message
+    });
+  }
 });
 
 module.exports = router;
