@@ -9,6 +9,10 @@ import { Badge } from 'antd';
 import { useSocket } from '../context/SocketContext';
 import Logo from "/assets/logo.jpg";
 import './layout.css';
+import {
+  UserOutlined,
+  VideoCameraOutlined,
+} from '@ant-design/icons';
 
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -134,6 +138,34 @@ const Layout = ({ children }) => {
         }
         return () => clearTimeout(timeoutId);
     }, [loading, dispatch]);
+
+    // Define items for doctor menu 
+    const getDoctorMenu = () => [
+        // ... existing doctor menu items ...
+        
+        // Add video consultations item to doctor menu
+        {
+          key: '/doctor/video-consultations',
+          icon: <VideoCameraOutlined />,
+          label: 'Video Consultations',
+        },
+        
+        // ... other doctor menu items ...
+    ];
+
+    // Define items for patient menu
+    const getPatientMenu = () => [
+        // ... existing patient menu items ...
+        
+        // Add video consultations for patients
+        {
+          key: '/video-consultations',
+          icon: <VideoCameraOutlined />,
+          label: 'Video Consultations',
+        },
+        
+        // ... other patient menu items ...
+    ];
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">

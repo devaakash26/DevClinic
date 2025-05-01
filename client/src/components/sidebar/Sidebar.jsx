@@ -5,7 +5,7 @@ import { hideLoading, showLoading } from '../../redux/loader';
 import {
     FaUserMd, FaHome, FaCalendarCheck, FaUserPlus, FaUserCog,
     FaUsers, FaClinicMedical, FaCog, FaIdCard, FaStethoscope,
-    FaTachometerAlt, FaNotesMedical, FaBell, FaHeadset
+    FaTachometerAlt, FaNotesMedical, FaBell, FaHeadset, FaVideo
 } from 'react-icons/fa';
 
 const Sidebar = ({ collapseClass }) => {
@@ -53,6 +53,11 @@ const Sidebar = ({ collapseClass }) => {
             name: "Appointments",
             path: "/appointments",
             icon: <FaCalendarCheck className="w-5 h-5" />
+        },
+        {
+            name: "Video Consultations",
+            path: "/video-consultations",
+            icon: <FaVideo className="w-5 h-5" />
         },
         {
             name: "Medical Records",
@@ -129,6 +134,11 @@ const Sidebar = ({ collapseClass }) => {
             name: "Appointments",
             path: "/doctor/appointments",
             icon: <FaCalendarCheck className="w-5 h-5" />
+        },
+        {
+            name: "Video Consultations",
+            path: "/doctor/video-consultations",
+            icon: <FaVideo className="w-5 h-5" />
         },
         {
             name: "Patients",

@@ -301,7 +301,7 @@ exports.appointmentApprovedTemplate = (patientName, appointmentId, appointmentDe
       <li><strong>Appointment ID:</strong> ${formattedAppointmentId}</li>
       <li><strong>Date and Time:</strong> ${formattedDateTime}</li>
       <li><strong>Reason:</strong> ${appointmentDetails.reason}</li>
-      <li><strong>Doctor:</strong> Dr. ${appointmentDetails.doctorName}</li>
+      <li><strong>Doctor:</strong> Dr. ${appointmentDetails.doctorInfo.firstname} ${appointmentDetails.doctorInfo.lastname}</li>
     </ul>
     <p>Please arrive 15 minutes before your scheduled appointment time. If you need to cancel or reschedule, please do so at least 24 hours in advance.</p>
     <p>We look forward to seeing you!</p>
@@ -352,7 +352,7 @@ exports.appointmentCompletedTemplate = (patientName, appointmentDetails) => {
     <p><strong>Appointment Details:</strong></p>
     <ul>
       <li><strong>Date:</strong> ${formattedDateTime}</li>
-      <li><strong>Doctor:</strong> Dr. ${appointmentDetails.doctorName}</li>
+      <li><strong>Doctor:</strong> Dr. ${appointmentDetails.doctorInfo.firstname} ${appointmentDetails.doctorInfo.lastname}</li>
       <li><strong>Reason:</strong> ${appointmentDetails.reason}</li>
     </ul>
     <p>Thank you for choosing DevClinic for your healthcare needs. We hope your experience was satisfactory.</p>
@@ -1095,6 +1095,239 @@ const welcomeEmailTemplate = (userName) => {
   `;
 };
 
+/**
+ * Video Consultation Email Template for Patients
+ */
+const videoConsultationPatientTemplate = (patientName, appointmentDetails) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Your Video Consultation Appointment</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; border: 1px solid #ddd; }
+        .section { margin-bottom: 20px; }
+        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #666; }
+        .button { display: inline-block; background-color: #4CAF50; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .meeting-link { font-weight: bold; color: #1a73e8; word-break: break-all; }
+        .info-box { background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 10px 15px; margin: 15px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>Video Consultation Appointment Confirmed</h2>
+      </div>
+      <div class="content">
+        <div class="section">
+          <p>Hello ${patientName},</p>
+          <p>Your video consultation appointment has been scheduled successfully. Please find the details below:</p>
+        </div>
+        
+        <div class="section">
+          <h3>Appointment Details</h3>
+          <p><strong>Doctor:</strong> Dr. ${appointmentDetails.doctorInfo.firstname} ${appointmentDetails.doctorInfo.lastname}</p>
+          <p><strong>Date:</strong> ${appointmentDetails.formattedDate || appointmentDetails.date}</p>
+          <p><strong>Time:</strong> ${appointmentDetails.formattedTime || appointmentDetails.time}</p>
+          <p><strong>Reason:</strong> ${appointmentDetails.reason}</p>
+        </div>
+        
+        <div class="section info-box">
+          <h3>Join your video consultation</h3>
+          <p>You can join the video consultation by clicking the button below at your scheduled appointment time:</p>
+          <div style="text-align: center;">
+            <a href="${appointmentDetails.videoConsultation.meetingLink}" class="button">Join Video Call</a>
+          </div>
+          <p style="margin-top: 15px;">Or copy and paste this link into your browser:</p>
+          <p class="meeting-link">${appointmentDetails.videoConsultation.meetingLink}</p>
+        </div>
+        
+        <div class="section">
+          <h3>Important Information</h3>
+          <ul>
+            <li>Please join 5 minutes before your scheduled time</li>
+            <li>Ensure you have a stable internet connection</li>
+            <li>Test your camera and microphone before joining</li>
+            <li>Choose a quiet and private location for your call</li>
+            <li>Have any relevant medical documents ready to share</li>
+          </ul>
+        </div>
+        
+        <div class="section">
+          <p>If you need to reschedule or cancel this appointment, please contact us at least 24 hours in advance.</p>
+          <p>Thank you for choosing DevClinic for your healthcare needs.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <p>This is an automated email, please do not reply. If you have any questions, please contact our support team.</p>
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Video Consultation Email Template for Doctors
+ */
+const videoConsultationDoctorTemplate = (doctorName, patientName, appointmentDetails) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Upcoming Video Consultation</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #1976D2; color: white; padding: 10px 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; border: 1px solid #ddd; }
+        .section { margin-bottom: 20px; }
+        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #666; }
+        .button { display: inline-block; background-color: #1976D2; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .meeting-link { font-weight: bold; color: #1a73e8; word-break: break-all; }
+        .info-box { background-color: #e3f2fd; border-left: 4px solid #1976D2; padding: 10px 15px; margin: 15px 0; }
+        .patient-info { background-color: #f5f5f5; padding: 15px; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>Upcoming Video Consultation</h2>
+      </div>
+      <div class="content">
+        <div class="section">
+          <p>Hello Dr. ${doctorName},</p>
+          <p>You have a video consultation appointment scheduled with a patient. Here are the details:</p>
+        </div>
+        
+        <div class="section">
+          <h3>Appointment Details</h3>
+          <p><strong>Patient:</strong> ${patientName}</p>
+          <p><strong>Date:</strong> ${appointmentDetails.formattedDate || appointmentDetails.date}</p>
+          <p><strong>Time:</strong> ${appointmentDetails.formattedTime || appointmentDetails.time}</p>
+          <p><strong>Reason:</strong> ${appointmentDetails.reason}</p>
+        </div>
+        
+        <div class="section patient-info">
+          <h3>Patient Information</h3>
+          <p><strong>Email:</strong> ${appointmentDetails.userInfo.email}</p>
+          <p><strong>Phone:</strong> ${appointmentDetails.userInfo.phone || 'Not provided'}</p>
+          ${appointmentDetails.symptoms ? `<p><strong>Symptoms:</strong> ${appointmentDetails.symptoms}</p>` : ''}
+          ${appointmentDetails.medicalHistory ? `<p><strong>Medical History:</strong> ${appointmentDetails.medicalHistory}</p>` : ''}
+          ${appointmentDetails.additionalNotes ? `<p><strong>Additional Notes:</strong> ${appointmentDetails.additionalNotes}</p>` : ''}
+        </div>
+        
+        <div class="section info-box">
+          <h3>Join the video consultation</h3>
+          <p>You can join the video consultation by clicking the button below at the scheduled appointment time:</p>
+          <div style="text-align: center;">
+            <a href="${appointmentDetails.videoConsultation.meetingLink}" class="button">Join Video Call</a>
+          </div>
+          <p style="margin-top: 15px;">Or copy and paste this link into your browser:</p>
+          <p class="meeting-link">${appointmentDetails.videoConsultation.meetingLink}</p>
+        </div>
+        
+        <div class="section">
+          <h3>Important Reminders</h3>
+          <ul>
+            <li>Please join 5 minutes before the scheduled time</li>
+            <li>Ensure you have a stable internet connection</li>
+            <li>Test your camera and microphone before joining</li>
+            <li>Choose a quiet and professional setting for the call</li>
+            <li>Have the patient's records ready for reference</li>
+          </ul>
+        </div>
+        
+        <div class="section">
+          <p>This appointment has also been added to your Google Calendar.</p>
+          <p>Thank you for your continued service at DevClinic.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <p>This is an automated email, please do not reply. If you have any questions, please contact the admin team.</p>
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Video Consultation Reminder Template
+ */
+const videoConsultationReminderTemplate = (name, appointmentDetails, userType) => {
+  const isDoctor = userType === 'doctor';
+  const headerColor = isDoctor ? '#1976D2' : '#4CAF50';
+  const buttonColor = isDoctor ? '#1976D2' : '#4CAF50';
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Video Consultation Reminder</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: ${headerColor}; color: white; padding: 10px 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; border: 1px solid #ddd; }
+        .section { margin-bottom: 20px; }
+        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #666; }
+        .button { display: inline-block; background-color: ${buttonColor}; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .meeting-link { font-weight: bold; color: #1a73e8; word-break: break-all; }
+        .reminder-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 15px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>Video Consultation Reminder</h2>
+      </div>
+      <div class="content">
+        <div class="section">
+          <p>Hello ${isDoctor ? 'Dr. ' : ''}${name},</p>
+          <p>This is a reminder for your upcoming video consultation appointment:</p>
+        </div>
+        
+        <div class="section reminder-box">
+          <h3>Appointment Details</h3>
+          <p><strong>${isDoctor ? 'Patient' : 'Doctor'}:</strong> ${isDoctor ? appointmentDetails.userInfo.name : `Dr. ${appointmentDetails.doctorInfo.firstname} ${appointmentDetails.doctorInfo.lastname}`}</p>
+          <p><strong>Date:</strong> ${appointmentDetails.formattedDate || appointmentDetails.date}</p>
+          <p><strong>Time:</strong> ${appointmentDetails.formattedTime || appointmentDetails.time} (in about 1 hour)</p>
+          <p><strong>Reason:</strong> ${appointmentDetails.reason}</p>
+        </div>
+        
+        <div class="section">
+          <h3>Join your video consultation</h3>
+          <p>You can join the video consultation by clicking the button below at the scheduled time:</p>
+          <div style="text-align: center;">
+            <a href="${appointmentDetails.videoConsultation.meetingLink}" class="button">Join Video Call</a>
+          </div>
+          <p style="margin-top: 15px;">Or copy and paste this link into your browser:</p>
+          <p class="meeting-link">${appointmentDetails.videoConsultation.meetingLink}</p>
+        </div>
+        
+        <div class="section">
+          <h3>Quick Checklist Before Joining</h3>
+          <ul>
+            <li>Test your camera and microphone</li>
+            <li>Ensure you have a stable internet connection</li>
+            <li>Find a quiet and private location</li>
+            ${isDoctor ? '<li>Have the patient\'s records ready for reference</li>' : '<li>Have any relevant medical documents ready to share</li>'}
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <p>This is an automated reminder, please do not reply. If you need to reschedule, please contact ${isDoctor ? 'the admin team' : 'us'} as soon as possible.</p>
+        <p>&copy; ${new Date().getFullYear()} DevClinic. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 module.exports = { 
   getEmailVerificationTemplate, 
   getPasswordResetTemplate,
@@ -1108,5 +1341,8 @@ module.exports = {
   medicalRecordEmailTemplate: exports.medicalRecordEmailTemplate,
   doctorAccountApprovedTemplate,
   doctorAccountRejectedTemplate,
-  welcomeEmailTemplate
+  welcomeEmailTemplate,
+  videoConsultationPatientTemplate,
+  videoConsultationDoctorTemplate,
+  videoConsultationReminderTemplate
 };

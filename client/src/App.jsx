@@ -32,6 +32,8 @@ import DoctorMedicalRecords from './pages/DoctorMedicalRecords';
 import PatientMedicalRecords from './pages/patient/PatientMedicalRecords';
 import Contact from './pages/Contact';
 import AdminMedicalRecords from './pages/admin/AdminMedicalRecords';
+import PatientVideoConsultations from './pages/patient/VideoConsultations';
+import DoctorVideoConsultations from './doctor/VideoConsultations';
 
 const App = () => {
   const { loading } = useSelector((state) => state.loading);
@@ -75,6 +77,7 @@ const App = () => {
         <Route path="/appointments" element={<ProtectedRoute><PatientAppointments /></ProtectedRoute>} />
         <Route path="/medical-records" element={<ProtectedRoute><PatientMedicalRecords /></ProtectedRoute>} />
         <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
+        <Route path="/video-consultations" element={<ProtectedRoute><PatientVideoConsultations /></ProtectedRoute>} />
 
         <Route path="/admin/*" element={<AdminRoute user={user} />} />
         <Route path="/doctor/*" element={<DoctorRoute user={user} />} />
@@ -125,6 +128,7 @@ const DoctorRoute = ({ user }) => {
       <Route path="patient/:id" element={<ProtectedRoute><Patient /></ProtectedRoute>} />
       <Route path="appointments" element={<ProtectedRoute><DoctorAppointments /></ProtectedRoute>} />
       <Route path="medical-records" element={<ProtectedRoute><DoctorMedicalRecords /></ProtectedRoute>} />
+      <Route path="video-consultations" element={<ProtectedRoute><DoctorVideoConsultations /></ProtectedRoute>} />
     </Routes>
 
   )

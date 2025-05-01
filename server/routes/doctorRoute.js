@@ -364,10 +364,9 @@ router.post("/update-appointment-status", authMiddleware, async (req, res) => {
     if (!patient) {
       return res.status(404).send({ message: "Patient not found", success: false });
     }
-
     // Send notification to patient
     const unseenNotifications = patient.unseenNotification || [];
-    unseenNotifications.push({
+        unseenNotifications.push({
       type: "Appointment Status Update",
       message: status === 'completed' 
         ? `Your appointment with Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} has been marked as completed. Thank you for using DevClinic!`
@@ -388,8 +387,8 @@ router.post("/update-appointment-status", authMiddleware, async (req, res) => {
             ? `Your appointment with Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} has been marked as completed. Thank you for using DevClinic!`
             : `Your appointment status is updated to '${status}' by Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname}`,
           onClickPath: `/appointments`,
-          data: {
-            appointmentId: appointment._id,
+            data: {
+                appointmentId: appointment._id,
             status: status,
             doctorId: appointment.doctorId
           },
@@ -411,17 +410,94 @@ router.post("/update-appointment-status", authMiddleware, async (req, res) => {
     try {
       const patientEmail = patient.email;
       const patientName = patient.name;
+      const doctorName = `${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname}`;
       
       if (patientEmail) {
         // Format appointment details for email
         const appointmentDetails = {
           startTime: `${appointment.date} ${appointment.time}`,
           reason: appointment.reason,
-          doctorName: `${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname}`
+          doctorName: doctorName,
+          date: appointment.date,
+          time: appointment.time,
+          userInfo: {
+            name: patientName,
+            email: patientEmail,
+            phone: patient.phone || patient.mobile
+          },
+          doctorInfo: appointment.doctorInfo
         };
         
-        if (status === 'approved') {
-          // Send approval email
+        // Handle video consultation for approved appointments
+        if (status === 'approved' && appointment.appointmentType === "video") {
+          // Import video consultation services
+          const { createVideoConsultation } = require('../services/googleCalendarService');
+          const { sendVideoConsultationPatientEmail, sendVideoConsultationDoctorEmail } = require("../utils/emailService");
+          
+          // Check if the appointment already has a video consultation link
+          if (!appointment.videoConsultation?.meetingLink || !appointment.videoConsultation?.calendarEventId) {
+            try {
+              console.log("Creating video consultation for appointment:", appointmentId);
+              const calendarResult = await createVideoConsultation(appointment);
+              
+              if (calendarResult.success) {
+                // Update the appointment with the video consultation details
+                appointment.videoConsultation = {
+                  meetingLink: calendarResult.meetingLink,
+                  calendarEventId: calendarResult.calendarEventId,
+                  joinedByPatient: false,
+                  joinedByDoctor: false
+                };
+                
+                await appointment.save();
+                console.log("Video consultation created with link:", calendarResult.meetingLink);
+                
+                // Update appointment details with video consultation info for emails
+                appointmentDetails.videoConsultation = appointment.videoConsultation;
+                
+                // Send video consultation emails to both patient and doctor
+                await sendVideoConsultationPatientEmail(patientEmail, patientName, appointmentDetails)
+                  .catch(err => console.error("Error sending video consultation email to patient:", err));
+                
+                await sendVideoConsultationDoctorEmail(
+                  appointment.doctorInfo.email, 
+                  doctorName, 
+                  patientName, 
+                  appointmentDetails
+                ).catch(err => console.error("Error sending video consultation email to doctor:", err));
+                
+                console.log("Video consultation emails sent to patient and doctor");
+              } else {
+                // If video creation failed, still approve but send regular emails
+                console.error('Failed to create video consultation:', calendarResult.error);
+                await sendAppointmentApprovedEmail(patientEmail, patientName, appointmentId, appointmentDetails)
+                  .catch(err => console.error("Error sending approval email:", err));
+              }
+            } catch (videoError) {
+              console.error('Error creating video consultation:', videoError);
+              // Still approve the appointment but send regular emails
+              await sendAppointmentApprovedEmail(patientEmail, patientName, appointmentId, appointmentDetails)
+                .catch(err => console.error("Error sending approval email:", err));
+            }
+          } else {
+            // Video consultation is already set up, include it in the appointment details
+            appointmentDetails.videoConsultation = appointment.videoConsultation;
+            
+            // Send video consultation emails to both patient and doctor
+            await sendVideoConsultationPatientEmail(patientEmail, patientName, appointmentDetails)
+              .catch(err => console.error("Error sending video consultation email to patient:", err));
+            
+            await sendVideoConsultationDoctorEmail(
+              appointment.doctorInfo.email, 
+              doctorName, 
+              patientName, 
+              appointmentDetails
+            ).catch(err => console.error("Error sending video consultation email to doctor:", err));
+            
+            console.log("Video consultation emails sent to patient and doctor");
+          }
+        } else if (status === 'approved') {
+          // For non-video appointments, send regular approval email
           await sendAppointmentApprovedEmail(
             patientEmail, 
             patientName, 
@@ -430,6 +506,17 @@ router.post("/update-appointment-status", authMiddleware, async (req, res) => {
           );
           console.log(`Appointment approval email sent to patient: ${patientEmail}`);
         } else if (status === 'rejected') {
+          // For rejected appointments, cancel any Google Calendar event if it exists
+          if (appointment.appointmentType === "video" && appointment.videoConsultation?.calendarEventId) {
+            try {
+              const { deleteCalendarEvent } = require('../services/googleCalendarService');
+              await deleteCalendarEvent(appointment.videoConsultation.calendarEventId);
+              console.log(`Cancelled Google Calendar event for rejected appointment: ${appointment.videoConsultation.calendarEventId}`);
+            } catch (calendarError) {
+              console.error('Error canceling Google Calendar event:', calendarError);
+            }
+          }
+          
           // Send rejection email
           await sendAppointmentRejectedEmail(
             patientEmail, 
@@ -454,14 +541,102 @@ router.post("/update-appointment-status", authMiddleware, async (req, res) => {
     }
 
     res.status(200).send({ message: "Appointment status updated", success: true });
-  } catch (error) {
-    console.error("Error updating appointment status:", error);
-    res.status(500).send({ 
+    } catch (error) {
+        console.error("Error updating appointment status:", error);
+        res.status(500).send({
       message: "An error occurred while updating the appointment status", 
       error: error.message,
       success: false 
-    });
-  }
+        });
+    }
+});
+
+
+// Add a new route to update doctor's join status for video consultation
+router.post('/update-video-join-status', authMiddleware, async (req, res) => {
+    try {
+        const { appointmentId, joined } = req.body;
+        const { userId } = req.body; // Doctor's user ID
+        
+        // Find the appointment
+        const appointment = await Appointment.findById(appointmentId);
+        if (!appointment) {
+            return res.status(404).send({
+                success: false,
+                message: 'Appointment not found'
+            });
+        }
+        
+        // Verify this is the doctor's appointment
+        if (appointment.doctorId !== userId) {
+            return res.status(403).send({
+                success: false,
+                message: 'You are not authorized to update this appointment'
+            });
+        }
+        
+        // Verify this is a video consultation
+        if (appointment.appointmentType !== "video" || !appointment.videoConsultation) {
+            return res.status(400).send({
+                success: false,
+                message: 'This is not a video consultation appointment'
+            });
+        }
+        
+        // Update the join status
+        appointment.videoConsultation.joinedByDoctor = joined;
+        await appointment.save();
+        
+        // If doctor joined, notify the patient
+        if (joined) {
+            // Find the patient user
+            const patientUser = await User.findOne({ _id: appointment.userId });
+            
+            if (patientUser) {
+                // Create notification for patient using the existing pattern
+                const unseenNotifications = patientUser.unseenNotification || [];
+                
+                unseenNotifications.push({
+                    type: 'video-consultation-doctor-joined',
+                message: `Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} has joined your video consultation.`,
+                data: {
+                    appointmentId: appointment._id,
+                    message: `Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} has joined your video consultation. Join now!`,
+                },
+                    onClickPath: '/patient/video-consultations',
+                    createdAt: new Date()
+            });
+                
+                // Update the patient's unseenNotification array
+                await User.findByIdAndUpdate(appointment.userId, { unseenNotification: unseenNotifications });
+            
+            // Socket notification
+            if (req.app.get('io')) {
+                const io = req.app.get('io');
+                const onlineUsers = req.app.get('onlineUsers') || {};
+                if (onlineUsers[appointment.userId]) {
+                    io.to(onlineUsers[appointment.userId]).emit('new-notification', {
+                        message: `Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} has joined your video consultation.`,
+                        appointmentId: appointment._id,
+                        videoConsultation: true
+                    });
+                    }
+                }
+            }
+        }
+        
+        res.status(200).send({
+            message: 'Video consultation join status updated',
+            success: true
+        });
+    } catch (error) {
+        console.error("Error updating video join status:", error);
+        res.status(500).send({
+            message: 'Error updating video join status',
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 //delete a appointment 
@@ -1334,6 +1509,102 @@ router.post("/proxy-upload-to-cloudinary", authMiddleware, async (req, res) => {
         res.status(500).send({
             success: false,
             message: "Server error during proxy upload",
+            error: error.message
+        });
+    }
+});
+
+// Get video consultations for a doctor
+router.get('/get-video-consultations', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId; // Get userId from auth middleware
+        
+        console.log(`Fetching video consultations for doctor with userId: ${userId}`);
+        
+        // Try both string comparison and ObjectId for better compatibility
+        let userIdObj;
+        try {
+            userIdObj = new mongoose.Types.ObjectId(userId);
+        } catch (e) {
+            console.log('Could not convert userId to ObjectId, will use string value');
+            userIdObj = userId;
+        }
+        
+        // Use a more permissive query to find all video consultations for this doctor
+        const videoConsultations = await Appointment.find({
+            doctorId: { $in: [userId, userIdObj] }, // Try both string and ObjectId
+            $and: [
+                { status: "approved" },
+                { $or: [
+                    { appointmentType: "video" },
+                    { "videoConsultation": { $exists: true } }
+                ]}
+            ]
+        }).sort({ date: 1, time: 1 });
+        
+        console.log(`Found ${videoConsultations.length} total video consultations for doctor`);
+        
+        // Debug all consultations
+        videoConsultations.forEach(consultation => {
+            console.log(`Appointment ID: ${consultation._id}`);
+            console.log(`Date: ${consultation.date}, Time: ${consultation.time}`);
+            console.log(`Status: ${consultation.status}, Type: ${consultation.appointmentType}`);
+            console.log(`Patient: ${consultation.userInfo?.name}`);
+            console.log(`Has videoConsultation: ${!!consultation.videoConsultation}`);
+            
+            if (consultation.videoConsultation) {
+                console.log(`Meeting link: ${consultation.videoConsultation.meetingLink}`);
+                console.log(`Calendar event ID: ${consultation.videoConsultation.calendarEventId}`);
+                console.log(`Joined by doctor: ${consultation.videoConsultation.joinedByDoctor}`);
+                console.log(`Joined by patient: ${consultation.videoConsultation.joinedByPatient}`);
+            }
+            
+            console.log('-------------------');
+        });
+        
+        // Process all consultations
+        const processedConsultations = videoConsultations.map(consultation => {
+            // Parse date and time correctly based on the stored format (DD-MM-YYYY HH:mm)
+            const consultationDateTime = moment(`${consultation.date} ${consultation.time}`, 'DD-MM-YYYY HH:mm');
+            const now = moment();
+            
+            // Calculate time until appointment in minutes
+            const minutesUntil = consultationDateTime.diff(now, 'minutes');
+            
+            // Determine appointment status
+            let joinStatus = 'upcoming';
+            
+            if (minutesUntil < -30) {
+                joinStatus = 'ended'; // Appointment ended (30 minutes after start time)
+            } else if (minutesUntil <= 0) {
+                joinStatus = 'active'; // Appointment is ongoing
+            } else if (minutesUntil <= 15) {
+                joinStatus = 'imminent'; // Appointment starting soon (within 15 minutes)
+            }
+            
+            return {
+                ...consultation.toObject(),
+                joinStatus,
+                minutesUntil: joinStatus === 'ended' ? 'Ended' : 
+                              joinStatus === 'active' ? 'Ongoing' : 
+                              `Starts in ${minutesUntil} minute${minutesUntil === 1 ? '' : 's'}`,
+                formattedDate: moment(consultation.date, "DD-MM-YYYY").format('dddd, MMMM D, YYYY'),
+                formattedTime: moment(consultation.time, 'HH:mm').format('h:mm A')
+            };
+        });
+        
+        console.log(`Returning ${processedConsultations.length} processed consultations to client`);
+        
+        res.status(200).send({
+            message: 'Video consultations fetched successfully',
+            success: true,
+            data: processedConsultations
+        });
+    } catch (error) {
+        console.error("Error fetching video consultations:", error);
+        res.status(500).send({
+            message: 'Error fetching video consultations',
+            success: false,
             error: error.message
         });
     }

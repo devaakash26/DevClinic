@@ -31,6 +31,9 @@ const API_ENDPOINTS = {
     CHECK_BOOK_AVAILABILITY: 'user/check-book-availability',
     GET_PATIENT_INFO: 'user/get-patient-info',
     UPDATE_APPOINTMENT_PAYMENT_METHOD: 'user/update-appointment-payment-method',
+    // Video consultation endpoints
+    GET_VIDEO_CONSULTATIONS: 'user/get-video-consultations',
+    UPDATE_VIDEO_JOIN_STATUS: 'user/update-video-join-status',
   },
   
   // Doctor endpoints
@@ -52,6 +55,9 @@ const API_ENDPOINTS = {
     EMAIL_MEDICAL_RECORD: (recordId) => `doctor/email-medical-record/${recordId}`,
     UPDATE_AVAILABILITY: 'doctor/update-availability',
     GET_TESTIMONIALS: 'doctor/get-doctor-testimonials',
+    // Video consultation endpoints
+    GET_VIDEO_CONSULTATIONS: 'doctor/get-video-consultations',
+    UPDATE_VIDEO_JOIN_STATUS: 'doctor/update-video-join-status',
   },
   
   // Payment endpoints

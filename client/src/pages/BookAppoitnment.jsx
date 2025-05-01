@@ -21,7 +21,8 @@ import {
     InfoCircleOutlined,
     ArrowLeftOutlined,
     StarOutlined,
-    LikeOutlined
+    LikeOutlined,
+    VideoCameraOutlined
 } from '@ant-design/icons';
 import { api, apiFetch } from '../utils/apiUtils';
 import { getApiUrl } from '../services/apiService';
@@ -252,6 +253,7 @@ function BookAppointment() {
     const [loadingTestimonials, setLoadingTestimonials] = useState(false);
     const [showPaymentSection, setShowPaymentSection] = useState(false);
     const [bookedAppointmentId, setBookedAppointmentId] = useState(null);
+    const [appointmentType, setAppointmentType] = useState('in-person');
 
     // Process doctor consultation hours to get start and end times
     const doctorHours = useMemo(() => {
@@ -957,10 +959,18 @@ function BookAppointment() {
                 additionalNotes: formData.additionalNotes || "",
                 paymentMethod: paymentMethod, // Add the payment method to the payload
                 // For razorpay, set initial status as pending-payment
-                status: paymentMethod === 'razorpay' ? 'pending-payment' : 'pending'
+                status: paymentMethod === 'razorpay' ? 'pending-payment' : 'pending',
+                appointmentType: appointmentType  // Add appointment type to payload
             };
             
             console.log('Sending appointment booking request with payload:', payload);
+            
+            // Check if video consultation is selected but payment method is not online
+            if (appointmentType === 'video' && paymentMethod !== 'razorpay') {
+                toast.error('Video consultations require online payment');
+                setPaymentMethod('razorpay');
+                return;
+            }
             
             const response = await api.post(
                 API_ENDPOINTS.USER.BOOK_APPOINTMENT, 
@@ -1499,6 +1509,86 @@ function BookAppointment() {
                             requiredMark={true}
                             className="max-w-full"
                         >
+                            <div className="mb-6">
+                                <h3 className="text-lg font-medium mb-4">Appointment Type</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div
+                                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                            appointmentType === 'in-person'
+                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                : 'border-gray-200 hover:border-blue-300'
+                                        }`}
+                                        onClick={() => setAppointmentType('in-person')}
+                                    >
+                                        <div className="flex items-center">
+                                            <div
+                                                className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${
+                                                    appointmentType === 'in-person' ? 'bg-blue-500' : 'border border-gray-400'
+                                                }`}
+                                            >
+                                                {appointmentType === 'in-person' && (
+                                                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <MedicineBoxOutlined className="text-xl mr-2 text-blue-500" />
+                                                <div>
+                                                    <div className="font-medium">In-Person Visit</div>
+                                                    <div className="text-xs text-gray-500">Visit the doctor at their clinic</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div
+                                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                            appointmentType === 'video'
+                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                : 'border-gray-200 hover:border-blue-300'
+                                        }`}
+                                        onClick={() => {
+                                            setAppointmentType('video');
+                                            setPaymentMethod('razorpay'); // Auto-select online payment for video
+                                        }}
+                                    >
+                                        <div className="flex items-center">
+                                            <div
+                                                className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${
+                                                    appointmentType === 'video' ? 'bg-blue-500' : 'border border-gray-400'
+                                                }`}
+                                            >
+                                                {appointmentType === 'video' && (
+                                                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <VideoCameraOutlined className="text-xl mr-2 text-blue-500" />
+                                                <div>
+                                                    <div className="font-medium">Video Consultation</div>
+                                                    <div className="text-xs text-gray-500">Consult online via video call</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {appointmentType === 'video' && (
+                                    <Alert
+                                        message="Video Consultation Information"
+                                        description={
+                                            <div className="text-sm">
+                                                <p>Video consultations require online payment in advance.</p>
+                                                <p>You will receive a Google Meet link via email after booking.</p>
+                                                <p>Make sure you have a stable internet connection for the call.</p>
+                                            </div>
+                                        }
+                                        type="info"
+                                        showIcon
+                                        className="mt-4"
+                                    />
+                                )}
+                            </div>
+                            
                             <Form.Item
                                 name="reason"
                                 label="Reason for Visit"
@@ -1608,8 +1698,17 @@ function BookAppointment() {
                                 
                                 <Card title="Appointment Details" className="mb-4 md:mb-0">
                                     <div className="flex items-center mb-3">
-                                        <CalendarOutlined className="text-blue-500 mr-2" />
-                                        <span className="font-medium">{selectedDate?.format('dddd, MMMM D, YYYY')}</span>
+                                        {appointmentType === 'video' ? (
+                                            <>
+                                                <VideoCameraOutlined className="text-blue-500 mr-2" />
+                                                <span className="font-medium">Video Consultation</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MedicineBoxOutlined className="text-blue-500 mr-2" />
+                                                <span className="font-medium">In-Person Visit</span>
+                                            </>
+                                        )}
                                     </div>
                                     
                                     <div className="flex items-center mb-3">
@@ -1624,6 +1723,7 @@ function BookAppointment() {
                                             value={paymentMethod} 
                                             onChange={(e) => setPaymentMethod(e.target.value)}
                                             className="w-full"
+                                            disabled={appointmentType === 'video'}
                                         >
                                             <div className="flex flex-col space-y-3">
                                                 <Radio.Button 
@@ -1633,8 +1733,10 @@ function BookAppointment() {
                                                         width: '100%', 
                                                         textAlign: 'left',
                                                         backgroundColor: paymentMethod === 'clinic' ? '#f0f7ff' : 'white',
-                                                        borderColor: paymentMethod === 'clinic' ? '#1890ff' : '#d9d9d9'
+                                                        borderColor: paymentMethod === 'clinic' ? '#1890ff' : '#d9d9d9',
+                                                        opacity: appointmentType === 'video' ? 0.5 : 1
                                                     }}
+                                                    disabled={appointmentType === 'video'}
                                                 >
                                                     <div className="flex items-center">
                                                         <div className="mr-2">
@@ -1678,7 +1780,9 @@ function BookAppointment() {
                                         message="Payment Information"
                                         description={
                                             <div className="text-sm">
-                                                {paymentMethod === 'clinic' ? (
+                                                {appointmentType === 'video' ? (
+                                                    <p>Video consultations require online payment. You'll be redirected to our secure payment gateway after confirming the appointment.</p>
+                                                ) : paymentMethod === 'clinic' ? (
                                                     <p>Payment will be collected at the clinic.</p>
                                                 ) : (
                                                     <p>You'll be redirected to our secure payment gateway after confirming the appointment.</p>

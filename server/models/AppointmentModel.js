@@ -77,6 +77,29 @@ const appointmentSchema = new mongoose.Schema({
     paymentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'payments'
+    },
+    appointmentType: {
+        type: String,
+        enum: ["in-person", "video"],
+        default: "in-person"
+    },
+    videoConsultation: {
+        meetingLink: {
+            type: String,
+            default: ""
+        },
+        calendarEventId: {
+            type: String,
+            default: ""
+        },
+        joinedByDoctor: {
+            type: Boolean,
+            default: false
+        },
+        joinedByPatient: {
+            type: Boolean,
+            default: false
+        }
     }
 }, {
     timestamps: true

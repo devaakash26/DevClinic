@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
-const { getEmailVerificationTemplate, getPasswordResetTemplate, appointmentRequestedPatientTemplate, appointmentRequestedDoctorTemplate, appointmentApprovedTemplate, appointmentRejectedTemplate, appointmentCompletedTemplate, doctorUnavailableAdminTemplate, doctorUnavailableConfirmationTemplate, medicalRecordEmailTemplate, doctorAccountApprovedTemplate, doctorAccountRejectedTemplate, welcomeEmailTemplate } = require('./emailTemplates');
+const { getEmailVerificationTemplate, getPasswordResetTemplate, appointmentRequestedPatientTemplate, appointmentRequestedDoctorTemplate, appointmentApprovedTemplate, appointmentRejectedTemplate, appointmentCompletedTemplate, doctorUnavailableAdminTemplate, doctorUnavailableConfirmationTemplate, medicalRecordEmailTemplate, doctorAccountApprovedTemplate, doctorAccountRejectedTemplate, welcomeEmailTemplate, videoConsultationPatientTemplate, videoConsultationDoctorTemplate, videoConsultationReminderTemplate } = require('./emailTemplates');
+const moment = require('moment');
 
 // Create reusable transporter object using SMTP transport
 const createTransporter = () => {
@@ -580,6 +581,152 @@ const sendWelcomeEmail = async (email, name) => {
   }
 };
 
+/**
+ * Send Video Consultation Email to Patient
+ * @param {string} patientEmail - Patient's email address
+ * @param {string} patientName - Patient's name
+ * @param {object} appointmentDetails - Appointment details including video link
+ */
+const sendVideoConsultationPatientEmail = async (patientEmail, patientName, appointmentDetails) => {
+  try {
+    // Validate and clean up email address
+    if (!patientEmail || typeof patientEmail !== 'string' || 
+        !patientEmail.includes('@') || !patientEmail.includes('.')) {
+      console.error(`Invalid patient email address: ${patientEmail}`);
+      return false;
+    }
+    
+    // Format the appointment details for email display with explicit format parsing
+    const formattedAppointment = {
+      ...appointmentDetails,
+      // Use explicit format for parsing the date to avoid deprecation warnings
+      formattedDate: moment(appointmentDetails.date, "DD-MM-YYYY").format('dddd, MMMM D, YYYY'),
+      formattedTime: moment(appointmentDetails.time, 'HH:mm').format('h:mm A')
+    };
+    
+    // Check if the video consultation details exist
+    if (!appointmentDetails.videoConsultation || !appointmentDetails.videoConsultation.meetingLink) {
+      console.error('Missing video consultation link in appointment details');
+      return false;
+    }
+    
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: patientEmail.trim(),
+      subject: 'Your Video Consultation Appointment - DevClinic',
+      html: videoConsultationPatientTemplate(patientName, formattedAppointment),
+      priority: 'high'
+    };
+
+    console.log(`Sending video consultation email to patient: ${patientEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Video consultation email sent to patient: ${patientEmail}, messageId: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending video consultation email to patient:', error);
+    return false;
+  }
+};
+
+/**
+ * Send Video Consultation Email to Doctor
+ * @param {string} doctorEmail - Doctor's email address
+ * @param {string} doctorName - Doctor's name
+ * @param {string} patientName - Patient's name
+ * @param {object} appointmentDetails - Appointment details including video link
+ */
+const sendVideoConsultationDoctorEmail = async (doctorEmail, doctorName, patientName, appointmentDetails) => {
+  try {
+    // Validate and clean up email address
+    if (!doctorEmail || typeof doctorEmail !== 'string' || 
+        !doctorEmail.includes('@') || !doctorEmail.includes('.')) {
+      console.error(`Invalid doctor email address: ${doctorEmail}`);
+      return false;
+    }
+    
+    // Format the appointment details for email display with explicit format parsing
+    const formattedAppointment = {
+      ...appointmentDetails,
+      // Use explicit format for parsing the date to avoid deprecation warnings
+      formattedDate: moment(appointmentDetails.date, "DD-MM-YYYY").format('dddd, MMMM D, YYYY'),
+      formattedTime: moment(appointmentDetails.time, 'HH:mm').format('h:mm A')
+    };
+    
+    // Check if the video consultation details exist
+    if (!appointmentDetails.videoConsultation || !appointmentDetails.videoConsultation.meetingLink) {
+      console.error('Missing video consultation link in appointment details');
+      return false;
+    }
+    
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: doctorEmail.trim(),
+      subject: 'Upcoming Video Consultation - DevClinic',
+      html: videoConsultationDoctorTemplate(doctorName, patientName, formattedAppointment),
+      priority: 'high'
+    };
+
+    console.log(`Sending video consultation email to doctor: ${doctorEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Video consultation email sent to doctor: ${doctorEmail}, messageId: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending video consultation email to doctor:', error);
+    return false;
+  }
+};
+
+/**
+ * Send Video Consultation Reminder Email
+ * @param {string} email - Recipient email address
+ * @param {string} name - Recipient name
+ * @param {object} appointmentDetails - Appointment details including video link
+ * @param {string} userType - 'doctor' or 'patient'
+ */
+const sendVideoConsultationReminderEmail = async (email, name, appointmentDetails, userType) => {
+  try {
+    // Validate and clean up email address
+    if (!email || typeof email !== 'string' || 
+        !email.includes('@') || !email.includes('.')) {
+      console.error(`Invalid email address for reminder: ${email}`);
+      return false;
+    }
+    
+    // Format the appointment details for email display with explicit format parsing
+    const formattedAppointment = {
+      ...appointmentDetails,
+      // Use explicit format for parsing the date to avoid deprecation warnings
+      formattedDate: moment(appointmentDetails.date, "DD-MM-YYYY").format('dddd, MMMM D, YYYY'),
+      formattedTime: moment(appointmentDetails.time, 'HH:mm').format('h:mm A')
+    };
+    
+    // Check if the video consultation details exist
+    if (!appointmentDetails.videoConsultation || !appointmentDetails.videoConsultation.meetingLink) {
+      console.error('Missing video consultation link in appointment details');
+      return false;
+    }
+    
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || '"DevClinic" <no-reply@devclinic.com>',
+      to: email.trim(),
+      subject: 'Reminder: Upcoming Video Consultation - DevClinic',
+      html: videoConsultationReminderTemplate(name, formattedAppointment, userType),
+      priority: 'high'
+    };
+
+    console.log(`Sending video consultation reminder to ${userType}: ${email}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Video consultation reminder sent to ${userType}: ${email}, messageId: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error sending video consultation reminder to ${userType}:`, error);
+    return false;
+  }
+};
+
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -593,5 +740,8 @@ module.exports = {
   sendMedicalRecordToPatientEmail,
   sendDoctorAccountApprovedEmail,
   sendDoctorAccountRejectedEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendVideoConsultationPatientEmail,
+  sendVideoConsultationDoctorEmail,
+  sendVideoConsultationReminderEmail
 }; 
