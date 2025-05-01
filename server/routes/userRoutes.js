@@ -1194,6 +1194,59 @@ router.post("/upload-profile-picture", authMiddleware, upload.single('profileIma
   }
 });
 
+// Get a single appointment by ID
+router.get("/appointment/:appointmentId", authMiddleware, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    
+    if (!appointmentId) {
+      return res.status(400).send({
+        success: false,
+        message: "Appointment ID is required"
+      });
+    }
+
+    // Find the appointment with the given ID
+    const appointment = await Appointments.findById(appointmentId);
+    
+    if (!appointment) {
+      return res.status(404).send({
+        success: false,
+        message: "Appointment not found"
+      });
+    }
+
+    // Ensure the user is authorized to view this appointment (user is either the patient or the doctor)
+    const userId = req.body.userId;
+    if (appointment.userId !== userId && appointment.doctorId !== userId) {
+      console.log("Authorization check failed:", {
+        appointmentUserId: appointment.userId,
+        appointmentDoctorId: appointment.doctorId,
+        requestUserId: userId
+      });
+      
+      return res.status(403).send({
+        success: false,
+        message: "You are not authorized to view this appointment"
+      });
+    }
+
+    // Return the appointment
+    return res.status(200).send({
+      success: true,
+      message: "Appointment found",
+      data: appointment
+    });
+  } catch (error) {
+    console.error("Error fetching appointment:", error);
+    res.status(500).send({
+      success: false,
+      message: "Server error while fetching appointment",
+      error: error.message
+    });
+  }
+});
+
 // Update password
 router.post("/update-password", authMiddleware, async (req, res) => {
   try {
@@ -1361,14 +1414,6 @@ router.post("/delete-notification", authMiddleware, async (req, res) => {
         });
     }
 });
-
-// Helper function to ensure notification has createdAt timestamp
-const ensureNotificationTimestamp = (notification) => {
-    if (!notification.createdAt) {
-        notification.createdAt = new Date();
-    }
-    return notification;
-};
 
 //mark-notification-seen
 router.post("/mark-notification-seen", authMiddleware, async (req, res) => {
@@ -1777,5 +1822,13 @@ router.post('/update-appointment-payment-method', authMiddleware, async (req, re
     });
   }
 });
+
+// Helper function to ensure notification has createdAt timestamp
+const ensureNotificationTimestamp = (notification) => {
+    if (!notification.createdAt) {
+        notification.createdAt = new Date();
+    }
+    return notification;
+};
 
 module.exports = router;

@@ -1,10 +1,6 @@
 import axios from 'axios';
 import { getApiUrl } from '../services/apiService';
 
-/**
- * Creates an axios instance with the base URL from environment variables
- * and automatically adds the authentication token from localStorage if available
- */
 export const createAxiosInstance = () => {
   const instance = axios.create();
   

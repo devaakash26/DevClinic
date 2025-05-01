@@ -284,7 +284,15 @@ const DoctorAppointments = () => {
                 <Button 
                   type="primary" 
                   icon={<CheckCircleOutlined />}
-                  onClick={() => changeAppointmentStatus(record, "approved")}
+                  onClick={() => {
+                    Modal.confirm({
+                      title: 'Confirm Appointment Approval',
+                      content: 'Are you sure you want to approve this appointment? An email notification will be sent to the patient.',
+                      okText: 'Yes, Approve',
+                      cancelText: 'Cancel',
+                      onOk: () => changeAppointmentStatus(record, "approved")
+                    });
+                  }}
                 />
               </Tooltip>
               <Tooltip title="Reject">

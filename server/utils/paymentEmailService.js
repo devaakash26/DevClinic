@@ -252,5 +252,6 @@ const sendPaymentFailureEmail = async (user, doctor, appointment, paymentDetails
 
 module.exports = {
     sendPaymentConfirmationEmail,
-    sendPaymentFailureEmail
+    sendPaymentFailureEmail,
+    formatCurrency
 }; 

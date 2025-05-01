@@ -9,6 +9,9 @@ const Appointment = require('../models/AppointmentModel');
 const Payment = require('../models/paymentModel');
 const { sendPaymentConfirmationEmail, sendPaymentFailureEmail } = require('../utils/paymentEmailService');
 
+// Import formatCurrency from paymentEmailService
+const { formatCurrency } = require('../utils/paymentEmailService');
+
 // Initialize Razorpay
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -187,6 +190,115 @@ router.post('/verify-payment', authMiddleware, async (req, res) => {
                         appointment, 
                         payment
                     );
+                }
+                
+                // Send notification to doctor about the new appointment
+                try {
+                    // Get the doctor user to update their notifications
+                    const doctorUser = await User.findById(appointment.doctorId);
+                    
+                    if (doctorUser) {
+                        // Add notification to doctor's unseen notifications
+                        const unseenNotifications = doctorUser.unseenNotification || [];
+                        unseenNotifications.push({
+                            type: "new-appointment-request",
+                            message: `A new appointment request from ${appointment.userInfo.name} for ${appointment.date} at ${appointment.time}. Payment completed online.`,
+                            data: {
+                                appointmentId: appointment._id,
+                                userInfo: appointment.userInfo,
+                                date: appointment.date,
+                                time: appointment.time,
+                                paymentStatus: 'paid'
+                            },
+                            onClickPath: "/doctor/appointments",
+                        });
+                        
+                        await User.findByIdAndUpdate(appointment.doctorId, { unseenNotification: unseenNotifications });
+                        console.log("Doctor notification sent successfully after payment");
+                        
+                        // Send real-time notification if socket is available
+                        try {
+                            const io = req.app.get("io");
+                            if (io) {
+                                const notificationObj = {
+                                    type: "new-appointment-request",
+                                    message: `A new appointment request from ${appointment.userInfo.name} for ${appointment.date} at ${appointment.time}. Payment completed online.`,
+                                    onClickPath: "/doctor/appointments",
+                                    data: {
+                                        appointmentId: appointment._id,
+                                        date: appointment.date,
+                                        time: appointment.time,
+                                        paymentStatus: 'paid'
+                                    }
+                                };
+                                
+                                io.to(`user_${appointment.doctorId}`).emit("receive_notification", {
+                                    userId: appointment.doctorId,
+                                    notification: notificationObj
+                                });
+                                
+                                console.log(`Real-time notification sent to doctor: ${appointment.doctorId}`);
+                            }
+                        } catch (socketError) {
+                            console.error("Socket error for doctor notification:", socketError);
+                        }
+                    }
+                } catch (notificationError) {
+                    console.error("Error sending doctor notification after payment:", notificationError);
+                }
+                
+                // Send notification to patient about successful payment
+                try {
+                    if (userData) {
+                        // Add notification to patient's unseen notifications
+                        const unseenNotifications = userData.unseenNotification || [];
+                        unseenNotifications.push({
+                            type: "payment-success",
+                            message: `Your payment of ${formatCurrency(payment.amount)} for the appointment with Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} on ${appointment.date} at ${appointment.time} was successful.`,
+                            data: {
+                                appointmentId: appointment._id,
+                                doctorInfo: appointment.doctorInfo,
+                                date: appointment.date,
+                                time: appointment.time,
+                                paymentStatus: 'paid',
+                                paymentId: payment.paymentId
+                            },
+                            onClickPath: "/appointments",
+                        });
+                        
+                        await User.findByIdAndUpdate(appointment.userId, { unseenNotification: unseenNotifications });
+                        console.log("Patient notification sent successfully after payment");
+                        
+                        // Send real-time notification if socket is available
+                        try {
+                            const io = req.app.get("io");
+                            if (io) {
+                                const notificationObj = {
+                                    type: "payment-success",
+                                    message: `Your payment of ${formatCurrency(payment.amount)} for the appointment with Dr. ${appointment.doctorInfo.firstname} ${appointment.doctorInfo.lastname} on ${appointment.date} at ${appointment.time} was successful.`,
+                                    onClickPath: "/appointments",
+                                    data: {
+                                        appointmentId: appointment._id,
+                                        date: appointment.date,
+                                        time: appointment.time,
+                                        paymentStatus: 'paid',
+                                        paymentId: payment.paymentId
+                                    }
+                                };
+                                
+                                io.to(`user_${appointment.userId}`).emit("receive_notification", {
+                                    userId: appointment.userId,
+                                    notification: notificationObj
+                                });
+                                
+                                console.log(`Real-time notification sent to patient: ${appointment.userId}`);
+                            }
+                        } catch (socketError) {
+                            console.error("Socket error for patient notification:", socketError);
+                        }
+                    }
+                } catch (notificationError) {
+                    console.error("Error sending patient notification after payment:", notificationError);
                 }
             }
 
