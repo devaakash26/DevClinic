@@ -150,6 +150,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ✅ Export the serverless handler for Vercel
-module.exports = serverless(app, {
-  binary: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf']
-}); 
+// Use a simpler export format that works with serverless-http 3.x
+module.exports = serverless(app); 
