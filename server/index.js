@@ -13,6 +13,9 @@ let dbPromise = dbConnect();
 
 const app = express();
 
+// CORS handling - explicit preflight handling
+app.options('*', cors(corsOptions));
+
 // Apply minimal middleware for better performance
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
@@ -120,4 +123,4 @@ module.exports = serverless(app, {
   provider: {
     timeout: 60  // Maximum timeout in seconds
   }
-});
+}); 
