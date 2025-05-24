@@ -8,8 +8,11 @@ const serverless = require('serverless-http');
 const corsOptions = require('./cors-config');
 const dbConnect = require("./connection/dbConnect");
 
-// Initialize MongoDB connection early
-let dbPromise = dbConnect();
+// Initialize MongoDB connection early but don't wait for it to complete
+let dbPromise = dbConnect().catch(err => {
+  console.error("Initial DB connection failed:", err);
+  // Don't throw, let the server start anyway
+});
 
 const app = express();
 
@@ -23,7 +26,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Simple health check endpoint
+// Root route handler - NO DB CONNECTION REQUIRED
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'Developer Clinic API Server',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Simple health check endpoint - NO DB CONNECTION REQUIRED
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -70,13 +82,16 @@ const withDb = (handler) => [
       next();
     } catch (err) {
       console.error("DB Connection Error:", err);
-      res.status(500).json({ error: "Database connection failed" });
+      res.status(500).json({ 
+        error: "Database connection failed",
+        message: err.message 
+      });
     }
   },
   handler
 ];
 
-// Register Routes
+// Register Routes - These require DB connection
 app.use('/api/user', ...withDb(require('./routes/userRoutes')));
 app.use('/api/user', ...withDb(require('./routes/userRoute')));
 app.use('/api/admin', ...withDb(require('./routes/adminRoute')));
@@ -84,9 +99,25 @@ app.use('/api/doctor', ...withDb(require('./routes/doctorRoute')));
 app.use('/api/support', ...withDb(require('./routes/supportRoute')));
 app.use('/api/payment', ...withDb(require('./routes/paymentRoutes')));
 
-// Catch-all route
+// Catch-all route for API paths - Should return 404 for unknown API routes
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Endpoint not found: ${req.originalUrl}`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Catch-all route for non-API paths
 app.use('*', (req, res) => {
-  res.status(200).send(`Server is running. Path: ${req.originalUrl}`);
+  // Exclude API paths which are handled above
+  if (!req.originalUrl.startsWith('/api/')) {
+    res.status(200).json({
+      message: 'Developer Clinic API Server',
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Error handler
@@ -94,7 +125,8 @@ app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({
     error: 'Internal server error',
-    message: err.message
+    message: err.message || 'Unknown error occurred',
+    path: req.originalUrl
   });
 });
 

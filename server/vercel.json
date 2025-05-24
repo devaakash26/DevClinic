@@ -13,7 +13,7 @@
       }
     ],
     "rewrites": [
-      { "source": "/api/(.*)", "destination": "/index.js" }
+      { "source": "/(.*)", "destination": "/index.js" }
     ],
     "headers": [
       {
@@ -28,8 +28,19 @@
     ],
     "routes": [
       {
+        "handle": "filesystem"
+      },
+      {
         "src": "/(.*)",
         "methods": ["OPTIONS"],
+        "dest": "/index.js"
+      },
+      {
+        "src": "/",
+        "dest": "/index.js"
+      },
+      {
+        "src": "/api/(.*)",
         "dest": "/index.js"
       }
     ],
