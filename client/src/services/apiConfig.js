@@ -74,6 +74,12 @@ const API_ENDPOINTS = {
     APPOINTMENTS: 'admin/appointments',
     PATIENT_RECORDS: 'admin/patient-records',
     MEDICAL_RECORDS: 'admin/medical-records',
+    // Video consultation monitoring endpoints
+    GET_ALL_VIDEO_CONSULTATIONS: 'admin/get-all-video-consultations',
+    GET_ACTIVE_VIDEO_CONSULTATIONS: 'admin/get-active-video-consultations',
+    GET_VIDEO_CONSULTATION_DETAILS: (consultationId) => `admin/get-video-consultation/${consultationId}`,
+    MONITOR_VIDEO_CONSULTATION: 'admin/monitor-video-consultation',
+    END_VIDEO_CONSULTATION: 'admin/end-video-consultation',
   },
   
   // Notification endpoints

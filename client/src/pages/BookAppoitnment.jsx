@@ -168,7 +168,6 @@ const TestimonialItem = ({ author, content, datetime, avatar }) => {
 
 // Helper function to extract actual timing values from potentially nested arrays/strings
 const extractTimingValues = (timing) => {
-  console.log("Extracting timing from:", timing);
   
   if (!timing) return null;
   
@@ -181,7 +180,6 @@ const extractTimingValues = (timing) => {
       // First parse if it's a JSON string
       try {
         parsedTiming = JSON.parse(timing);
-        console.log("First level parse:", parsedTiming);
       } catch (e) {
         console.log("First level parse failed:", e.message);
       }
@@ -190,7 +188,6 @@ const extractTimingValues = (timing) => {
       if (typeof parsedTiming === 'string' && parsedTiming.startsWith('[')) {
         try {
           parsedTiming = JSON.parse(parsedTiming);
-          console.log("Second level parse:", parsedTiming);
         } catch (e) {
           console.log("Second level parse failed:", e.message);
         }
@@ -262,21 +259,18 @@ function BookAppointment() {
             return null;
         }
         
-        console.log("Processing doctor hours from timing:", doctor.timing);
         
         try {
             // Extract the actual timing values using our helper function
             const timingValues = extractTimingValues(doctor.timing);
             
             if (!timingValues || !Array.isArray(timingValues) || timingValues.length < 2) {
-                console.log("Invalid doctor timing data after extraction", timingValues);
                 return null;
             }
             
             let startTimeStr = timingValues[0];
             let endTimeStr = timingValues[1];
             
-            console.log("Original doctor hours after extraction:", { startTimeStr, endTimeStr });
             
             // Handle ISO date strings (containing 'T')
             if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
@@ -291,14 +285,12 @@ function BookAppointment() {
             startTimeStr = typeof startTimeStr === 'string' ? startTimeStr.replace(/"/g, '') : startTimeStr;
             endTimeStr = typeof endTimeStr === 'string' ? endTimeStr.replace(/"/g, '') : endTimeStr;
             
-            console.log("Processed time strings:", { startTimeStr, endTimeStr });
             
             // Create moment objects with strict parsing
             const startTime = moment(startTimeStr, 'HH:mm', true);
             const endTime = moment(endTimeStr, 'HH:mm', true);
             
             if (!startTime.isValid() || !endTime.isValid()) {
-                console.error("Invalid time format in doctor timing", { startTimeStr, endTimeStr });
                 return null;
             }
             
@@ -327,8 +319,6 @@ function BookAppointment() {
 
     // Generate all possible 30-minute slots for the doctor's hours
     const generateTimeSlots = (selectedDay) => {
-        console.log("Generating time slots for:", selectedDay?.format('YYYY-MM-DD'));
-        console.log("Doctor object:", doctor);
         
         if (!doctor) {
             console.log("No doctor available, cannot generate time slots");
@@ -348,7 +338,6 @@ function BookAppointment() {
                 let startTimeStr = timingValues[0];
                 let endTimeStr = timingValues[1];
                 
-                console.log("Original timing strings from doctor:", { startTimeStr, endTimeStr });
                 
                 // Handle ISO date strings (containing 'T')
                 if (typeof startTimeStr === 'string' && startTimeStr.includes('T')) {
@@ -374,7 +363,6 @@ function BookAppointment() {
                     return [];
                 }
                 
-                console.log("Using timing strings after processing:", { startTimeStr, endTimeStr });
                 
                 // Create moment objects with strict parsing to ensure they're valid
                 const startTime = moment(startTimeStr, 'HH:mm', true);
@@ -393,7 +381,6 @@ function BookAppointment() {
                 }
                 
                 // If we get here, there was a problem with the doctor's timing
-                console.log("Invalid doctor timing format in database");
                 return [];
             } catch (error) {
                 console.error("Error processing doctor's timing:", error);
@@ -420,8 +407,6 @@ function BookAppointment() {
         let currentSlot = moment().hours(startTime.hours()).minutes(startTime.minutes());
         const endTimeFormatted = endTime.format('HH:mm');
         
-        console.log("Starting iteration at:", currentSlot.format('HH:mm'));
-        console.log("Will end at:", endTimeFormatted);
         
         // Safety counter to prevent infinite loops
         let iterationCount = 0;
@@ -442,8 +427,6 @@ function BookAppointment() {
                 // Calculate hours difference between current time and slot time
                 const slotTimeObj = moment().set('hour', currentHour).set('minute', currentMinute);
                 const hoursDifference = slotTimeObj.diff(now, 'hours', true);
-                
-                console.log(`Slot ${slotTime.format('HH:mm')} - Hours difference: ${hoursDifference.toFixed(2)}`);
                 
                 // Rule: For same-day bookings, slot must be at least 12 hours in advance
                 if (hoursDifference < 12) {
@@ -473,7 +456,6 @@ function BookAppointment() {
             // Move to next slot ensuring we preserve hour/minute exactness
             currentSlot = moment(currentSlot).add(30, 'minutes');
             
-            console.log(`Added slot: ${slots[slots.length-1].format('HH:mm')}, Next: ${currentSlot.format('HH:mm')}`);
         }
         
         console.log(`Generated ${slots.length} slots:`, slots.map(s => s.format('HH:mm')));
@@ -483,13 +465,11 @@ function BookAppointment() {
     // Function to check which slots are available on the selected date
     const checkAvailableSlots = async (date) => {
         if (!doctor) {
-            console.log("No doctor information available yet");
             setSlotsLoading(false);
             return;
         }
 
         if (!doctor.userId) {
-            console.log("Missing doctor userId. Doctor object:", doctor);
             // Try to use doctorId from URL if available
             if (doctorId) {
                 console.log("Using doctorId from URL instead:", doctorId);
@@ -500,17 +480,14 @@ function BookAppointment() {
             }
         }
         
-        console.log("Checking slots for date:", date.format('YYYY-MM-DD'));
         setSlotsLoading(true);
         const formattedDate = moment(date).format("DD-MM-YYYY");
         
         try {
             // Get all possible time slots for the doctor, applying time constraint rules
             const allSlots = generateTimeSlots(date);
-            console.log("All possible slots (after time constraint):", allSlots.length);
             
             if (allSlots.length === 0) {
-                console.log("No slots available for this date after applying time constraints");
                 setAvailableTimes([]);
                 setSlotsLoading(false);
                 
@@ -543,7 +520,6 @@ function BookAppointment() {
                     }
                 );
                 
-                console.log("Booked slots response:", bookedResponse.data);
                 
                 if (bookedResponse.data.success) {
                     const bookedSlots = bookedResponse.data.bookedSlots || [];
@@ -585,7 +561,6 @@ function BookAppointment() {
                 await checkSlotsIndividually(allSlots, formattedDate);
             }
         } catch (error) {
-            console.error('Error checking slot availability:', error);
             if (error.response) {
                 console.error("Response data:", error.response.data);
                 console.error("Response status:", error.response.status);
@@ -603,7 +578,6 @@ function BookAppointment() {
 
     // Helper function to check slots individually if batch method fails
     const checkSlotsIndividually = async (allSlots, formattedDate) => {
-        console.log("Falling back to individual slot checking");
         let availableSlots = [];
         let bookedSlots = [];
         
@@ -661,8 +635,6 @@ function BookAppointment() {
             }
         }
         
-        console.log("Available slots:", availableSlots.length);
-        console.log("Booked slots:", bookedSlots.length);
         
         setAvailableTimes([...availableSlots]);
         
@@ -721,14 +693,10 @@ function BookAppointment() {
                             time: timeString,
                         };
                         
-                        console.log(`Checking future slot on ${formattedDate} at ${timeString}`);
-                        
                         const response = await api.post(
                             'user/check-book-availability', 
                             payload
                         );
-                        
-                        console.log(`Availability response for future slot on ${formattedDate} at ${timeString}:`, response.data);
                         
                         if (response.data.success) {
                             console.log(`Found available slot on ${formattedDate} at ${timeString}`);
@@ -775,7 +743,6 @@ function BookAppointment() {
             setLoadingError(false);
             setErrorMessage("");
             dispatch(showLoading());
-            console.log("Fetching doctor info for ID:", doctorId);
             
             if (!doctorId) {
                 setLoadingError(true);
@@ -787,11 +754,9 @@ function BookAppointment() {
             
             // More robust approach using params
             const encodedDoctorId = encodeURIComponent(doctorId);
-            console.log("Encoded doctorId:", encodedDoctorId);
             
             const response = await api.get(API_ENDPOINTS.DOCTOR.GET_DOCTOR_BY_ID(encodedDoctorId));
             
-            console.log("API Response:", response.data);
             dispatch(hideLoading());
 
             if (response.data.success && response.data.data) {
@@ -820,7 +785,6 @@ function BookAppointment() {
                     setDoctor(processedDoctor);
                     return true;
             } else {
-                    console.log("Setting doctor with original data");
                     setDoctor(doctorData);
                     return true;
                 }
@@ -902,12 +866,6 @@ function BookAppointment() {
         
         // Get the current form values synchronously to ensure we have the latest values
         const formData = form.getFieldsValue(true);
-        console.log("Current form values:", formData);
-        
-        // Log the selected date and time for debugging
-        console.log("Selected Date (moment object):", selectedDate);
-        console.log("Selected Date (formatted):", selectedDate.format("DD-MM-YYYY"));
-        console.log("Selected Time:", selectedTime.format("HH:mm"));
         
         // Explicitly check for the reason field
         if (!formData.reason || formData.reason.trim() === '') {
@@ -938,7 +896,6 @@ function BookAppointment() {
             const formattedTime = selectedTime.format("HH:mm");
             
             // Log the final payload before sending
-            console.log("Final payload date:", formattedDate);
             
             // Use the effective doctorId (from doctor object or URL param)
             const effectiveDoctorId = doctor?.userId || doctorId;
@@ -963,8 +920,6 @@ function BookAppointment() {
                 appointmentType: appointmentType  // Add appointment type to payload
             };
             
-            console.log('Sending appointment booking request with payload:', payload);
-            
             // Check if video consultation is selected but payment method is not online
             if (appointmentType === 'video' && paymentMethod !== 'razorpay') {
                 toast.error('Video consultations require online payment');
@@ -980,8 +935,6 @@ function BookAppointment() {
             dispatch(hideLoading());
             setLoading(false);
             
-            console.log('Appointment booking response:', response.data);
-
             if (response.data.success) {
                 // Store the appointment ID for razorpay payment if needed
                 const appointmentId = response.data.data._id || response.data.data.appointmentId;
@@ -1031,8 +984,6 @@ function BookAppointment() {
             setLoading(false);
             
             // Enhanced error logging
-            console.error('Error booking appointment:', error);
-            
             let errorMessage = 'Something went wrong while booking your appointment';
             
             if (error.response) {
@@ -1067,8 +1018,6 @@ function BookAppointment() {
         const safeDate = date ? moment(date) : null;
         
         // Log the incoming date and processed date
-        console.log("Incoming date:", date);
-        console.log("Processed safeDate:", safeDate?.format("DD-MM-YYYY"));
         
         // Make sure the date is not in the past and is valid
         if (!safeDate || !safeDate.isValid()) {
@@ -1085,10 +1034,6 @@ function BookAppointment() {
         setSelectedDate(safeDate);
         setSelectedTime(null);
         
-        // Log the state update
-        console.log("Updated selectedDate state:", safeDate.format("DD-MM-YYYY"));
-        
-        // Reset the form's date field to ensure it matches the selected date
         form.setFieldsValue({
             date: safeDate.format('YYYY-MM-DD')
         });
@@ -1211,8 +1156,6 @@ function BookAppointment() {
     useEffect(() => {
         let isMounted = true;
         let retryTimeout = null;
-        
-        console.log("BookAppointment component mounted with doctorId:", doctorId);
         
         // Track loading attempts
         const loadDoctorInfo = async (retryCount = 0) => {

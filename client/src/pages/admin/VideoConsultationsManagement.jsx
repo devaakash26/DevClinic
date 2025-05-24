@@ -8,8 +8,6 @@ import moment from 'moment';
 import { hideLoading, showLoading } from '../../redux/alertsSlice';
 import io from 'socket.io-client';
 
-const { TabPane } = Tabs;
-const { Option } = Select;
 const { confirm } = Modal;
 
 const statusColors = {
@@ -680,62 +678,81 @@ const VideoConsultationsManagement = () => {
         </Row>
       </div>
       
-      <Tabs defaultActiveKey="all">
-        <TabPane tab="All Consultations" key="all">
-          <Table
-            columns={columns}
-            dataSource={getFilteredConsultations()}
-            rowKey="_id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
-            }}
-          />
-        </TabPane>
-        <TabPane tab="Active & Imminent" key="active">
-          <Table
-            columns={columns}
-            dataSource={getFilteredConsultations().filter(
-              c => c.meetingStatus === 'active' || c.meetingStatus === 'imminent'
-            )}
-            rowKey="_id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
-            }}
-          />
-        </TabPane>
-        <TabPane tab="Upcoming" key="upcoming">
-          <Table
-            columns={columns}
-            dataSource={getFilteredConsultations().filter(
-              c => c.meetingStatus === 'scheduled'
-            )}
-            rowKey="_id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
-            }}
-          />
-        </TabPane>
-        <TabPane tab="Completed" key="completed">
-          <Table
-            columns={columns}
-            dataSource={getFilteredConsultations().filter(
-              c => c.meetingStatus === 'ended'
-            )}
-            rowKey="_id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
-            }}
-          />
-        </TabPane>
-      </Tabs>
+      <Tabs 
+        defaultActiveKey="all" 
+        items={[
+          {
+            key: 'all',
+            label: 'All Consultations',
+            children: (
+              <Table
+                columns={columns}
+                dataSource={getFilteredConsultations()}
+                rowKey="_id"
+                loading={loading}
+                pagination={{ 
+                  pageSize: 10,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
+                }}
+              />
+            )
+          },
+          {
+            key: 'active',
+            label: 'Active & Imminent',
+            children: (
+              <Table
+                columns={columns}
+                dataSource={getFilteredConsultations().filter(
+                  c => c.meetingStatus === 'active' || c.meetingStatus === 'imminent'
+                )}
+                rowKey="_id"
+                loading={loading}
+                pagination={{ 
+                  pageSize: 10,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
+                }}
+              />
+            )
+          },
+          {
+            key: 'upcoming',
+            label: 'Upcoming',
+            children: (
+              <Table
+                columns={columns}
+                dataSource={getFilteredConsultations().filter(
+                  c => c.meetingStatus === 'scheduled'
+                )}
+                rowKey="_id"
+                loading={loading}
+                pagination={{ 
+                  pageSize: 10,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
+                }}
+              />
+            )
+          },
+          {
+            key: 'completed',
+            label: 'Completed',
+            children: (
+              <Table
+                columns={columns}
+                dataSource={getFilteredConsultations().filter(
+                  c => c.meetingStatus === 'ended'
+                )}
+                rowKey="_id"
+                loading={loading}
+                pagination={{ 
+                  pageSize: 10,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} consultations`
+                }}
+              />
+            )
+          }
+        ]}
+      />
       
       {renderDetailsModal()}
       {renderActionsModal()}

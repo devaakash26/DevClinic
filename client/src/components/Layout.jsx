@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { hideLoading, showLoading } from '../redux/loader';
@@ -25,7 +25,25 @@ const Layout = ({ children }) => {
     const sidebarRef = useRef(null);
     const { socket, isConnected } = useSocket();
     
-    // Close sidebar when route changes (mobile)
+    // Use global variable for sidebar collapsed state to prevent flash during navigation
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.sidebarCollapsedState || localStorage.getItem('sidebarCollapsed') === 'true';
+        }
+        return false;
+    });
+
+    // Use layout effect to synchronize with global state immediately
+    useLayoutEffect(() => {
+        const updateFromGlobal = () => {
+            if (typeof window !== 'undefined') {
+                setIsSidebarCollapsed(window.sidebarCollapsedState || false);
+            }
+        };
+        updateFromGlobal();
+    }, []);
+    
+    // Close mobile sidebar when route changes, but maintain collapsed state
     useEffect(() => {
         setSidebarOpen(false);
     }, [location.pathname]);
@@ -33,7 +51,7 @@ const Layout = ({ children }) => {
     const toggleSidebar = () => {
         setSidebarOpen(prevState => !prevState);
         
-        // Control body scroll when sidebar is open/closed
+        // Control body scroll when sidebar is open/closed on mobile
         if (!sidebarOpen) {
             document.body.style.overflow = 'hidden'; // Prevent scrolling when sidebar is open
         } else {
@@ -85,9 +103,23 @@ const Layout = ({ children }) => {
         }
     }, [socket, user?._id]);
 
+    // Custom event to detect sidebar collapse from within the app
+    useEffect(() => {
+        const handleSidebarCollapse = (e) => {
+            setIsSidebarCollapsed(e.detail.isCollapsed);
+        };
+        
+        window.addEventListener('sidebarCollapseChange', handleSidebarCollapse);
+        
+        return () => {
+            window.removeEventListener('sidebarCollapseChange', handleSidebarCollapse);
+        };
+    }, []);
+
     const logout = () => {
         dispatch(showLoading());
         localStorage.clear();
+        window.sidebarCollapsedState = false; // Reset sidebar state when logging out
         toast.success("Logout Successfully");
         navigate("/");
         dispatch(hideLoading());
@@ -139,34 +171,6 @@ const Layout = ({ children }) => {
         return () => clearTimeout(timeoutId);
     }, [loading, dispatch]);
 
-    // Define items for doctor menu 
-    const getDoctorMenu = () => [
-        // ... existing doctor menu items ...
-        
-        // Add video consultations item to doctor menu
-        {
-          key: '/doctor/video-consultations',
-          icon: <VideoCameraOutlined />,
-          label: 'Video Consultations',
-        },
-        
-        // ... other doctor menu items ...
-    ];
-
-    // Define items for patient menu
-    const getPatientMenu = () => [
-        // ... existing patient menu items ...
-        
-        // Add video consultations for patients
-        {
-          key: '/video-consultations',
-          icon: <VideoCameraOutlined />,
-          label: 'Video Consultations',
-        },
-        
-        // ... other patient menu items ...
-    ];
-
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Loading Spinner */}
@@ -177,7 +181,7 @@ const Layout = ({ children }) => {
             )}
 
             {/* Header */}
-            <header className="bg-white shadow-sm navbar-fixed header">
+            <header className={`bg-white shadow-sm navbar-fixed header transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20 lg:w-[calc(100%-5rem)]' : 'lg:ml-64 lg:w-[calc(100%-16rem)]'}`}>
                 <div className="px-4 sm:px-6 lg:px-8 py-3">
                     <div className="flex items-center justify-between">
                         {/* Left: Logo and menu button */}
@@ -190,8 +194,6 @@ const Layout = ({ children }) => {
                             >
                                 {sidebarOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
                             </button>
-                            
-                           
                             
                             {/* Desktop Logo */}
                             <Link to="/" className="hidden lg:flex items-center">
@@ -249,83 +251,29 @@ const Layout = ({ children }) => {
                                     <span className="ml-2 text-sm font-medium text-gray-700 hidden sm:inline-block group-hover:text-blue-600">
                                         {user?.name?.split(' ')[0]}
                                     </span>
-                                    <svg className="w-4 h-4 ml-1 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
                                 </button>
 
-                                {/* Dropdown */}
+                                {/* Dropdown Menu */}
                                 {dropdownVisible && (
-                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-2 z-50 text-sm border border-gray-100 animate-fadeIn">
-                                        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
+                                        <Link 
+                                            to="/profile" 
+                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => setDropdownVisible(false)}
+                                        >
                                             <div className="flex items-center">
-                                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm mr-3">
-                                                    <img 
-                                                        src={getUserProfilePic()} 
-                                                        alt="Profile" 
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            e.target.onerror = null; 
-                                                            e.target.src = "/assets/profile.png";
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-gray-800">{user?.name}</p>
-                                                    <p className="text-xs text-gray-500">{user?.email}</p>
-                                                </div>
+                                                <FaUserCog className="mr-2" /> Profile Settings
                                             </div>
-                                            <div className="mt-2">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {user?.isAdmin ? 'Admin' : user?.isDoctor ? 'Doctor' : 'Patient'}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        </Link>
                                         
-                                        {/* Dropdown Items */}
-                                        <ul className="py-1">
-                                            <li className="hover:bg-gray-50">
-                                                <Link to="/profile" className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600">
-                                                    <FaUserCog className="w-4 h-4 mr-3 text-gray-500" />
-                                                    Profile Settings
-                                                </Link>
-                                            </li>
-                                            
-                                            <li className="hover:bg-gray-50">
-                                                <Link to={`/notifications/${user?._id}`} className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600">
-                                                    <div className="flex items-center">
-                                                        <FaRegBell className="w-4 h-4 mr-3 text-gray-500" />
-                                                        <span>Notifications</span>
-                                                    </div>
-                                                    {getNotificationCount() > 0 && (
-                                                        <span className="ml-auto px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white">
-                                                            {getNotificationCount()}
-                                                        </span>
-                                                    )}
-                                                </Link>
-                                            </li>
-                                            
-                                            {!user?.isAdmin && !user?.isDoctor && (
-                                                <li className="hover:bg-gray-50">
-                                                    <Link to="/appointments" className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600">
-                                                        <svg className="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                        </svg>
-                                                        My Appointments
-                                                    </Link>
-                                                </li>
-                                            )}
-                                            
-                                            <li className="hover:bg-gray-50">
-                                                <button 
-                                                    className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50"
-                                                    onClick={logout}
-                                                >
-                                                    <FaSignOutAlt className="w-4 h-4 mr-3 text-red-500" />
-                                                    Logout
-                                                </button>
-                                            </li>
-                                        </ul>
+                                        <button 
+                                            onClick={logout}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <div className="flex items-center text-red-500">
+                                                <FaSignOutAlt className="mr-2" /> Sign out
+                                            </div>
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -334,69 +282,29 @@ const Layout = ({ children }) => {
                 </div>
             </header>
 
-            {/* Sidebar overlay - darkens the background when sidebar is open on mobile */}
-            <div 
-                className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
-                onClick={toggleSidebar}
-            ></div>
-
-            <div className="flex-1 flex">
-                {/* Sidebar - desktop (hidden on mobile) */}
-                <aside className="hidden lg:block lg:w-64 flex-shrink-0 sidebar">
-                    <Sidebar collapseClass="hidden-mobile" />
-                </aside>
-
-                {/* Mobile Sidebar */}
-                <aside 
-                    ref={sidebarRef}
-                    className={`lg:hidden mobile-sidebar ${sidebarOpen ? 'open' : ''} sidebar`}
-                >
-                    <div className="flex justify-between p-4 lg:hidden border-b border-gray-700">
-                        <Link to="/" className="flex items-center">
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-lg shadow-md mr-2">
-                                    <span className="text-white font-bold text-sm">DC</span>
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold">
-                                        <span className="text-blue-300">Dev</span>
-                                        <span className="text-indigo-300">Clinic</span>
-                                    </h3>
-                                </div>
-                            </div>
-                        </Link>
-                        <button 
-                            onClick={toggleSidebar}
-                            className="text-white hover:text-blue-400 focus:outline-none transition-colors duration-200"
-                            aria-label="Close menu"
-                        >
-                            <FaTimes size={20} />
-                        </button>
-                    </div>
-                    <Sidebar collapseClass="" />
-                </aside>
-
-                {/* Main Content */}
-                <div className="flex-1 content-with-sidebar">
-                    <main className="p-4 sm:p-6 lg:p-6 w-full transition-all duration-300 mt-2">
-                        <div className="content-container rounded-lg shadow bg-white p-4 sm:p-6">
-                            {children}
-                        </div>
-                    </main>
+            {/* Main content area with sidebar */}
+            <div className="flex flex-1 relative">
+                {/* Sidebar - placed in a div for handling click outside */}
+                <div ref={sidebarRef} className="sidebar-wrapper">
+                    <Sidebar collapseClass={sidebarOpen ? '' : 'hidden-mobile'} />
                 </div>
-            </div>
 
-            <style jsx="true">{`
-                .pulse-animation {
-                    animation: pulse 1s infinite;
-                }
-                
-                @keyframes pulse {
-                    0% { transform: scale(1); }
-                    50% { transform: scale(1.2); }
-                    100% { transform: scale(1); }
-                }
-            `}</style>
+                {/* Mobile overlay to capture clicks outside sidebar when open */}
+                {sidebarOpen && (
+                    <div 
+                        className="fixed inset-0 bg-gray-900 bg-opacity-50 z-30 lg:hidden"
+                        onClick={toggleSidebar}
+                        aria-hidden="true"
+                    ></div>
+                )}
+
+                {/* Main Content - adjusted for sidebar width with transitions */}
+                <main className={`flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+                    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-h-[calc(100vh-120px)]">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

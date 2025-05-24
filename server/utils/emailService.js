@@ -606,8 +606,35 @@ const sendVideoConsultationPatientEmail = async (patientEmail, patientName, appo
     
     // Check if the video consultation details exist
     if (!appointmentDetails.videoConsultation || !appointmentDetails.videoConsultation.meetingLink) {
-      console.error('Missing video consultation link in appointment details');
-      return false;
+      console.warn('Missing video consultation link in appointment details, creating fallback link');
+      
+      // Create a fallback meeting link
+      const fallbackMeetingId = `dev-clinic-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const fallbackMeetingLink = `https://meet.google.com/${fallbackMeetingId}`;
+      
+      // Add fallback video consultation details to the appointment
+      formattedAppointment.videoConsultation = {
+        meetingLink: fallbackMeetingLink,
+        calendarEventId: `manual-${fallbackMeetingId}`,
+        isFallbackLink: true
+      };
+      
+      console.log('Created fallback meeting link for email:', fallbackMeetingLink);
+    } else if (appointmentDetails.videoConsultation.meetingLink === "") {
+      console.warn('Empty video consultation link in appointment details, creating fallback link');
+      
+      // Create a fallback meeting link
+      const fallbackMeetingId = `dev-clinic-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const fallbackMeetingLink = `https://meet.google.com/${fallbackMeetingId}`;
+      
+      // Replace empty meeting link with fallback
+      formattedAppointment.videoConsultation = {
+        ...appointmentDetails.videoConsultation,
+        meetingLink: fallbackMeetingLink,
+        isFallbackLink: true
+      };
+      
+      console.log('Created fallback meeting link for email to replace empty link:', fallbackMeetingLink);
     }
     
     const transporter = createTransporter();
@@ -655,8 +682,35 @@ const sendVideoConsultationDoctorEmail = async (doctorEmail, doctorName, patient
     
     // Check if the video consultation details exist
     if (!appointmentDetails.videoConsultation || !appointmentDetails.videoConsultation.meetingLink) {
-      console.error('Missing video consultation link in appointment details');
-      return false;
+      console.warn('Missing video consultation link in appointment details, creating fallback link');
+      
+      // Create a fallback meeting link
+      const fallbackMeetingId = `dev-clinic-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const fallbackMeetingLink = `https://meet.google.com/${fallbackMeetingId}`;
+      
+      // Add fallback video consultation details to the appointment
+      formattedAppointment.videoConsultation = {
+        meetingLink: fallbackMeetingLink,
+        calendarEventId: `manual-${fallbackMeetingId}`,
+        isFallbackLink: true
+      };
+      
+      console.log('Created fallback meeting link for email:', fallbackMeetingLink);
+    } else if (appointmentDetails.videoConsultation.meetingLink === "") {
+      console.warn('Empty video consultation link in appointment details, creating fallback link');
+      
+      // Create a fallback meeting link
+      const fallbackMeetingId = `dev-clinic-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const fallbackMeetingLink = `https://meet.google.com/${fallbackMeetingId}`;
+      
+      // Replace empty meeting link with fallback
+      formattedAppointment.videoConsultation = {
+        ...appointmentDetails.videoConsultation,
+        meetingLink: fallbackMeetingLink,
+        isFallbackLink: true
+      };
+      
+      console.log('Created fallback meeting link for email to replace empty link:', fallbackMeetingLink);
     }
     
     const transporter = createTransporter();

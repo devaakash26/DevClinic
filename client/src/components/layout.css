@@ -7,7 +7,6 @@
   top: 0;
   height: 100%;
   z-index: 40;
-  width: 260px;
   transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
@@ -18,9 +17,9 @@
     left: 0;
     top: 0;
     height: 100vh;
-    width: 260px;
     z-index: 20;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s ease-in-out;
   }
 }
 
@@ -32,8 +31,6 @@
 /* Ensure main content doesn't overlap with sidebar */
 @media (min-width: 1024px) {
   .content-with-sidebar {
-    margin-left: 260px;
-    width: calc(100% - 260px);
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
   }
 }
@@ -56,8 +53,8 @@
 
 @media (min-width: 1024px) {
   .navbar-fixed {
-    left: 260px;
-    width: calc(100% - 260px);
+    width: calc(100% - 64px);
+    transition: width 0.3s ease-in-out, left 0.3s ease-in-out;
   }
 }
 
@@ -158,8 +155,7 @@
 /* Fix for content shifting on large screens */
 @media (min-width: 1024px) {
   .navbar-fixed {
-    left: 260px;
-    width: calc(100% - 260px);
+    transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
   }
 }
 
@@ -201,20 +197,28 @@
   100% { background-position: 0% 50%; }
 }
 
-.w-10.h-10, .w-9.h-9, .w-8.h-8 {
+.w-10.h-10, 
+.w-9.h-9, 
+.w-8.h-8 {
   background-size: 200% 200%;
   animation: gradientShift 5s ease infinite;
   transition: all 0.3s ease;
 }
 
-.w-10.h-10:hover, .w-9.h-9:hover, .w-8.h-8:hover {
+.w-10.h-10:hover, 
+.w-9.h-9:hover, 
+.w-8.h-8:hover {
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
 }
 
 /* Animate the underline gradient */
-.h-0.5.w-full {
+.h-0 {
   transition: width 0.3s ease;
   animation: expandWidth 0.5s ease-out forwards;
+}
+
+.w-full {
+  width: 100%;
 }
 
 @keyframes expandWidth {
@@ -303,4 +307,243 @@ button[aria-label="Open menu"],
 button[aria-label="Close menu"] {
   position: relative;
   z-index: 60 !important;
+}
+
+/* Collapsible sidebar specific styles */
+.sidebar-toggle-btn {
+  position: absolute; 
+  right: -10px;
+  top: 80px;
+  z-index: 41;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  border: 2px solid #1f2937;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-toggle-btn:hover {
+  transform: scale(1.1);
+  background: #2563eb;
+}
+
+/* Add tooltip for collapsed menu items */
+.collapsed-tooltip {
+  position: relative;
+}
+
+.collapsed-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-left: 10px;
+  z-index: 50;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.collapsed-tooltip:hover::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #1f2937 transparent transparent;
+  margin-left: -2px;
+  z-index: 51;
+}
+
+/* Collapsed sidebar item focus styles */
+.sidebar-collapsed .menu-item {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-collapsed .menu-item:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.sidebar-collapsed .menu-item.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Smooth transitions for all sidebar elements */
+.sidebar * {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, width 0.3s ease-in-out, margin 0.3s ease-in-out, padding 0.3s ease-in-out;
+}
+
+/* Handle responsive content shifting */
+@media (min-width: 1024px) {
+  .content-with-sidebar-collapsed {
+    margin-left: 80px;
+    width: calc(100% - 80px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+  }
+  
+  .content-with-sidebar-expanded {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+  }
+}
+
+/* Add some visual feedback for expandable/collapsible elements */
+.expandable-element {
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.expandable-element.expanded {
+  max-height: 500px; /* arbitrary large value */
+  opacity: 1;
+}
+
+/* Ensure proper spacing for collapsed sidebar items */
+.sidebar-collapsed .sidebar-footer {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.sidebar-collapsed .user-profile {
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Better hover effects for menu items */
+.sidebar .menu-item:hover {
+  transform: translateX(5px);
+}
+
+.sidebar-collapsed .menu-item:hover {
+  transform: scale(1.1);
+}
+
+/* Fix any potential z-index issues with collapsed menu items */
+.menu-item {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fix scrolling issues on mobile */
+@media (max-width: 1023px) {
+  .sidebar {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Add active state for menu links with no-js fallback */
+.menu-item.active,
+.menu-item[aria-current="page"] {
+  background-color: rgba(59, 130, 246, 0.1);
+  font-weight: 500;
+}
+
+/* Ensure proper z-index and position for sidebar toggle button */
+.sidebar-toggle-wrapper {
+  position: absolute;
+  top: 80px;
+  right: -12px;
+  z-index: 45;
+}
+
+/* Make sure sidebar toggle is visible when sidebar is collapsed */
+.sidebar-collapsed .sidebar-toggle-wrapper {
+  right: -12px;
+}
+
+/* Add improved focus styles for better accessibility */
+.sidebar a:focus,
+.sidebar button:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar for better UX */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* Hide scrollbar for Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.1);
+}
+
+/* For mobile, show custom scrollbar when sidebar is expanded */
+@media (max-width: 1023px) {
+  .sidebar-wrapper {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 40;
+    width: 100%;
+    pointer-events: none;
+  }
+  
+  .sidebar-wrapper > div {
+    pointer-events: auto;
+  }
+}
+
+/* Animations for sidebar elements */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sidebar-item-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Animation for collapsed items */
+@keyframes scaleIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.sidebar-collapsed .menu-icon {
+  animation: scaleIn 0.3s ease-in-out;
 }

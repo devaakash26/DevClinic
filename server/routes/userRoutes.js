@@ -947,23 +947,38 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       try {
         // Create Google Calendar event with Meet link
         const calendarResult = await createVideoConsultation(newAppointment);
+        console.log('Google Calendar API result:', calendarResult);
         
-        if (calendarResult.success) {
+        if (calendarResult.success && calendarResult.meetingLink) {
           // Add video consultation details to the appointment
           newAppointment.videoConsultation = {
             meetingLink: calendarResult.meetingLink,
-            calendarEventId: calendarResult.calendarEventId
+            calendarEventId: calendarResult.calendarEventId,
+            joinedByDoctor: false,
+            joinedByPatient: false
           };
           
           console.log('Video consultation link created:', calendarResult.meetingLink);
         } else {
           console.error('Failed to create video consultation:', calendarResult.error);
-          // Continue with appointment creation even if video link creation fails
-          // We'll handle this separately
+          // Set default values to prevent undefined errors
+          newAppointment.videoConsultation = {
+            meetingLink: "",
+            calendarEventId: "",
+            joinedByDoctor: false,
+            joinedByPatient: false
+          };
+          // You might want to send an alert or email to admin about this failure
         }
       } catch (videoError) {
         console.error('Error creating video consultation:', videoError);
-        // Continue with appointment creation but log the error
+        // Set default values to prevent undefined errors
+        newAppointment.videoConsultation = {
+          meetingLink: "",
+          calendarEventId: "",
+          joinedByDoctor: false,
+          joinedByPatient: false
+        };
       }
     }
 

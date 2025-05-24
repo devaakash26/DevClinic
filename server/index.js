@@ -8,14 +8,19 @@ const serverless = require('serverless-http');
 const corsOptions = require('./cors-config');
 const dbConnect = require("./connection/dbConnect");
 
+// Initialize MongoDB connection early
+let dbPromise = dbConnect();
+
 const app = express();
 
+// Apply minimal middleware for better performance
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+// Simple health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -57,7 +62,8 @@ app.all('/api/request-debug', (req, res) => {
 const withDb = (handler) => [
   async (req, res, next) => {
     try {
-      await dbConnect();
+      // Use the pre-initialized connection promise
+      await dbPromise;
       next();
     } catch (err) {
       console.error("DB Connection Error:", err);
@@ -109,4 +115,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ✅ Export the serverless handler for Vercel
-module.exports = serverless(app);
+module.exports = serverless(app, {
+  binary: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+  provider: {
+    timeout: 60  // Maximum timeout in seconds
+  }
+});

@@ -7,14 +7,18 @@ let cachedConnection = null;
 const dbConnect = async () => {
   // If we already have a connection, use it
   if (cachedConnection && mongoose.connection.readyState === 1) {
+    console.log("Reusing existing MongoDB connection");
     return cachedConnection;
   }
 
   // Short connection timeout for serverless environment
   const opts = {
-    connectTimeoutMS: 15000,
-    socketTimeoutMS: 15000,
-    serverSelectionTimeoutMS: 15000
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 30000,
+    serverSelectionTimeoutMS: 30000,
+    bufferCommands: true,
+    maxPoolSize: 10,
+    minPoolSize: 5
   };
 
   try {
@@ -22,6 +26,19 @@ const dbConnect = async () => {
     console.log("Connecting to MongoDB...");
     cachedConnection = await mongoose.connect(process.env.URI, opts);
     console.log("MongoDB connected successfully");
+    
+    // Handle connection close on serverless instance shutdown
+    const cleanup = () => {
+      if (cachedConnection) {
+        console.log("Closing MongoDB connection due to shutdown");
+        mongoose.connection.close();
+      }
+    };
+
+    // Add cleanup handlers
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+    
     return cachedConnection;
   } catch (error) {
     console.error("MongoDB connection error:", error.message);

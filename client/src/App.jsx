@@ -34,6 +34,7 @@ import Contact from './pages/Contact';
 import AdminMedicalRecords from './pages/admin/AdminMedicalRecords';
 import PatientVideoConsultations from './pages/patient/VideoConsultations';
 import DoctorVideoConsultations from './doctor/VideoConsultations';
+import VideoConsultationMonitoring from './pages/admin/VideoConsultationMonitoring';
 
 const App = () => {
   const { loading } = useSelector((state) => state.loading);
@@ -109,6 +110,7 @@ const AdminRoute = ({ user }) => {
       <Route path="appointments" element={<ProtectedRoute><AppointmentsManagement /></ProtectedRoute>} />
       <Route path="patient-records" element={<ProtectedRoute><PatientRecords /></ProtectedRoute>} />
       <Route path="medical-records" element={<ProtectedRoute><AdminMedicalRecords /></ProtectedRoute>} />
+      <Route path="video-consultations" element={<ProtectedRoute><VideoConsultationMonitoring /></ProtectedRoute>} />
       <Route path="*" element={<ProtectedRoute><Home /></ProtectedRoute>} />
     </Routes>
   );
