@@ -4,44 +4,13 @@
     "builds": [
       {
         "src": "index.js",
-        "use": "@vercel/node",
-        "config": {
-          "maxLambdaSize": "50mb",
-          "memory": 3008,
-          "maxDuration": 60
-        }
-      }
-    ],
-    "rewrites": [
-      { "source": "/(.*)", "destination": "/index.js" }
-    ],
-    "headers": [
-      {
-        "source": "/(.*)",
-        "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS" },
-          { "key": "Access-Control-Allow-Headers", "value": "X-Requested-With, Content-Type, Accept, Authorization" },
-          { "key": "Access-Control-Max-Age", "value": "86400" }
-        ]
+        "use": "@vercel/node"
       }
     ],
     "routes": [
       {
-        "handle": "filesystem"
-      },
-      {
         "src": "/(.*)",
-        "methods": ["OPTIONS"],
-        "dest": "/index.js"
-      },
-      {
-        "src": "/",
-        "dest": "/index.js"
-      },
-      {
-        "src": "/api/(.*)",
-        "dest": "/index.js"
+        "dest": "index.js"
       }
     ],
     "env": {
