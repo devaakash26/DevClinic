@@ -8,23 +8,39 @@ const serverless = require('serverless-http');
 const corsOptions = require('./cors-config');
 const dbConnect = require("./connection/dbConnect");
 
+const app = express();
+
+// Apply CORS middleware before any other middleware
+app.use(cors(corsOptions));
+// Explicit preflight handler
+app.options('*', cors(corsOptions));
+
 // Initialize MongoDB connection early but don't wait for it to complete
 let dbPromise = dbConnect().catch(err => {
   console.error("Initial DB connection failed:", err);
   // Don't throw, let the server start anyway
 });
 
-const app = express();
-
-// CORS handling - explicit preflight handling
-app.options('*', cors(corsOptions));
-
-// Apply minimal middleware for better performance
-app.use(cors(corsOptions));
+// Apply remaining middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// Global middleware to ensure CORS headers are set on all responses
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://developer-clinic.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
 
 // Root route handler - NO DB CONNECTION REQUIRED
 app.get('/', (req, res) => {
