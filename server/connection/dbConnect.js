@@ -11,17 +11,23 @@ const dbConnect = async () => {
     return cachedConnection;
   }
 
-  // Short connection timeout for serverless environment
+  // Shorter connection timeout for serverless environment
   const opts = {
-    connectTimeoutMS: 30000,
-    socketTimeoutMS: 30000,
-    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 10000,
     bufferCommands: true,
-    maxPoolSize: 10,
-    minPoolSize: 5
+    maxPoolSize: 5,
+    minPoolSize: 1
   };
 
   try {
+    // Check if URI exists
+    if (!process.env.URI) {
+      console.error("MongoDB URI is missing");
+      return null;
+    }
+
     // Connect to MongoDB
     console.log("Connecting to MongoDB...");
     cachedConnection = await mongoose.connect(process.env.URI, opts);
@@ -43,8 +49,7 @@ const dbConnect = async () => {
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
     // Don't throw error in serverless to prevent function failure
-    // Return mongoose anyway so app can still run with potential lazy connection
-    return mongoose;
+    return null;
   }
 };
 

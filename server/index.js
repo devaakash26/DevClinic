@@ -1,25 +1,20 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
+// Avoid heavyweight modules at the top level
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const serverless = require('serverless-http');
 const corsOptions = require('./cors-config');
-const dbConnect = require("./connection/dbConnect");
 
+// Create express app
 const app = express();
 
 // Apply CORS middleware before any other middleware
 app.use(cors(corsOptions));
 // Explicit preflight handler
 app.options('*', cors(corsOptions));
-
-// Initialize MongoDB connection early but don't wait for it to complete
-let dbPromise = dbConnect().catch(err => {
-  console.error("Initial DB connection failed:", err);
-  // Don't throw, let the server start anyway
-});
 
 // Apply remaining middleware
 app.use(express.json({ limit: '10mb' }));
@@ -89,18 +84,26 @@ app.all('/api/request-debug', (req, res) => {
   });
 });
 
-// Middleware to ensure MongoDB is connected per request
+// Lazy-load database connection - moved inside the middleware
 const withDb = (handler) => [
   async (req, res, next) => {
     try {
-      // Use the pre-initialized connection promise
-      await dbPromise;
+      // Import DB connect here to avoid initial cold start penalty
+      const dbConnect = require("./connection/dbConnect");
+      // Connect to database on demand
+      const connection = await dbConnect();
+      if (!connection) {
+        return res.status(500).json({
+          error: "Database connection failed",
+          message: "Could not establish database connection"
+        });
+      }
       next();
     } catch (err) {
       console.error("DB Connection Error:", err);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Database connection failed",
-        message: err.message 
+        message: err.message
       });
     }
   },
@@ -166,5 +169,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ✅ Export the serverless handler for Vercel
-// Use a simpler export format that works with serverless-http 3.x
+// Use a simpler format that works with serverless-http 3.x
 module.exports = serverless(app, { provider: 'aws' }); 
