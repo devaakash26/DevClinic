@@ -7,6 +7,18 @@
         "use": "@vercel/node"
       }
     ],
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "https://developer-clinic.vercel.app" },
+          { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS" },
+          { "key": "Access-Control-Allow-Headers", "value": "X-Requested-With, Content-Type, Accept, Authorization" },
+          { "key": "Access-Control-Allow-Credentials", "value": "true" },
+          { "key": "Access-Control-Max-Age", "value": "86400" }
+        ]
+      }
+    ],
     "routes": [
       {
         "src": "/(.*)",
