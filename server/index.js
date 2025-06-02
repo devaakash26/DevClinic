@@ -149,6 +149,8 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// ✅ Export the serverless handler for Vercel
-// Use a simpler export format that works with serverless-http 3.x
-module.exports = serverless(app, { provider: 'aws' }); 
+// Export for Vercel - ensure compatibility with their serverless functions
+module.exports = (req, res) => {
+  // This let's us use serverless-http while also being compatible with Vercel's function format
+  return app(req, res);
+}; 
