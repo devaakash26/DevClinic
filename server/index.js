@@ -24,10 +24,8 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Global middleware to ensure CORS headers are set on all responses
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://developer-clinic.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Don't set specific origin here as it overrides the cors middleware
+  // The cors middleware handles this properly using the corsOptions
   
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -117,6 +115,7 @@ app.use('/api/admin', ...withDb(require('./routes/adminRoute')));
 app.use('/api/doctor', ...withDb(require('./routes/doctorRoute')));
 app.use('/api/support', ...withDb(require('./routes/supportRoute')));
 app.use('/api/payment', ...withDb(require('./routes/paymentRoutes')));
+app.use('/api/chat', ...withDb(require('./routes/chatRoutes')));
 
 // Catch-all route for API paths - Should return 404 for unknown API routes
 app.all('/api/*', (req, res) => {
@@ -161,6 +160,79 @@ if (process.env.NODE_ENV !== 'production') {
       origin: "*",
       methods: ["GET", "POST"]
     }
+  });
+
+  // Store online users
+  const onlineUsers = new Map();
+
+  // Socket.io connection handler
+  io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+    
+    // Store the socket instance for reference in Express routes
+    app.set('io', io);
+    
+    // User authenticated and connected
+    socket.on('user_connected', (userData) => {
+      console.log('User connected:', userData.userId);
+      
+      // Add user to online users
+      onlineUsers.set(userData.userId, {
+        socketId: socket.id,
+        userId: userData.userId,
+        userName: userData.userName,
+        isDoctor: userData.isDoctor,
+        isAdmin: userData.isAdmin
+      });
+      
+      // Broadcast updated online users list
+      io.emit('online_users', Array.from(onlineUsers.values()));
+    });
+    
+    // Join a chat room
+    socket.on('join_chat', (chatId) => {
+      socket.join(chatId);
+      console.log(`User joined chat: ${chatId}`);
+    });
+    
+    // Send a message
+    socket.on('send_message', async (messageData) => {
+      console.log('New message:', messageData);
+      
+      // Emit to the specific chat room
+      io.to(messageData.chatId).emit('receive_message', messageData);
+      
+      // Emit to the specific receiver if they're not in the chat room
+      const receiver = onlineUsers.get(messageData.receiverId);
+      if (receiver) {
+        socket.to(receiver.socketId).emit('new_message_notification', {
+          message: messageData.message,
+          sender: messageData.sender,
+          chatId: messageData.chatId
+        });
+      }
+    });
+    
+    // Typing indicator
+    socket.on('typing', (data) => {
+      socket.to(data.chatId).emit('typing', data);
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
+      
+      // Find and remove the disconnected user
+      for (const [userId, user] of onlineUsers.entries()) {
+        if (user.socketId === socket.id) {
+          onlineUsers.delete(userId);
+          break;
+        }
+      }
+      
+      // Broadcast updated online users list
+      io.emit('online_users', Array.from(onlineUsers.values()));
+    });
   });
 
   server.listen(PORT, () => {

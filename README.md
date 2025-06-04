@@ -13,7 +13,9 @@ DevClinic is a comprehensive healthcare platform that connects patients with doc
 - **Email Service**: Nodemailer
 - **File Storage**: Cloud-based storage for medical records
 - **Third-party Authentication**: Google OAuth
-- **Real-time Notifications**: Socket.io
+- **Real-time Communications**: 
+  - Socket.io for real-time chat system
+  - Real-time notifications and status updates
 - **Testing**:
   - **Frontend Testing**: Vitest, React Testing Library, jsdom
   - **Backend Testing**: Supertest, Jest
@@ -31,13 +33,17 @@ DevClinic/
 │       ├── api/                 # API service calls
 │       ├── components/          # Reusable UI components
 │       │   ├── sidebar/         # Sidebar navigation components
-│       │   └── payment/         # Payment related components
+│       │   ├── payment/         # Payment related components
+│       │   └── ChatWidget/      # Chat system components
 │       ├── pages/               # Page components
 │       ├── admin/               # Admin dashboard components
 │       ├── doctor/              # Doctor dashboard components
 │       ├── patient/             # Patient dashboard components
 │       ├── utils/               # Utility functions
+│       │   └── socketUtils.js   # Socket.io connection management
 │       ├── services/            # Service layer for business logic
+│       ├── styles/              # CSS stylesheets
+│       │   └── ChatWidget.css   # Chat system styling
 │       ├── test/                # Test files
 │       │   ├── components/      # Component tests
 │       │   ├── pages/           # Page component tests
@@ -47,7 +53,11 @@ DevClinic/
 │   ├── cloudConfig/             # Configuration for cloud storage
 │   ├── middleware/              # Express middleware
 │   ├── models/                  # Mongoose data models
+│   │   └── ChatModel.js         # Chat and message schema
 │   ├── routes/                  # API routes
+│   │   └── chatRoutes.js        # Chat-related API endpoints
+│   ├── controllers/             # API controllers
+│   │   └── chatController.js    # Chat functionality implementation
 │   ├── utils/                   # Utility functions and services
 │   └── tests/                   # Server-side tests
 │       ├── unit/                # Unit tests
@@ -144,6 +154,105 @@ DevClinic/
   - Rating system with satisfaction levels
   - Option to share feedback as public testimonial
   - Doctors can view their ratings and feedback
+
+### 8. Real-Time Chat System
+
+The DevClinic platform includes a professional WhatsApp-like chat system that enables real-time communication between patients, doctors, and administrators.
+
+#### Architecture
+- **Frontend**: `client/src/components/ChatWidget.jsx`, `client/src/styles/ChatWidget.css`
+- **Backend**: `server/controllers/chatController.js`, `server/models/ChatModel.js`, `server/routes/chatRoutes.js`
+- **Socket Connection**: `client/src/utils/socketUtils.js`
+- **Real-time Integration**: Socket.io for instant message delivery and online status
+
+#### Features
+- **WhatsApp-like Interface**: Professional and familiar chat design
+- **Real-time Messaging**: Instant message delivery with read receipts
+- **User Status Indicators**: Shows online/offline status for all users
+- **Typing Indicators**: Displays when someone is typing a message
+- **Message Grouping**: Groups messages by date (Today, Yesterday, etc.)
+- **Notification System**: Previews of new messages with sender information
+- **Persistent History**: All messages are stored and retrieved from database
+- **Unread Message Counter**: Shows number of unread messages per conversation
+- **Emoji Support**: Full emoji picker for expressive communication
+- **Mobile Responsive**: Works seamlessly on all device sizes
+
+#### Technical Implementation
+- **Socket.io Integration**:
+  ```javascript
+  // Server-side socket setup
+  io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+    
+    // User authenticated and connected
+    socket.on('user_connected', (userData) => {
+      // Add user to online users list
+      onlineUsers.set(userData.userId, {
+        socketId: socket.id,
+        userId: userData.userId,
+        userName: userData.userName
+      });
+      
+      // Broadcast updated online users list
+      io.emit('online_users', Array.from(onlineUsers.values()));
+    });
+    
+    // Handle real-time messaging
+    socket.on('send_message', async (messageData) => {
+      // Emit to specific chat room
+      io.to(messageData.chatId).emit('receive_message', messageData);
+    });
+    
+    // Typing indicators
+    socket.on('typing', (data) => {
+      socket.to(data.chatId).emit('typing', data);
+    });
+  });
+  ```
+
+- **Database Schema**:
+  ```javascript
+  // Chat Model Schema
+  const chatSchema = new mongoose.Schema({
+    participants: [{ 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'user' 
+    }],
+    messages: [{
+      sender: {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
+        name: String
+      },
+      message: String,
+      timestamp: { type: Date, default: Date.now },
+      read: { type: Boolean, default: false }
+    }],
+    lastMessage: String,
+    lastMessageTimestamp: Date,
+    unreadCount: { type: Number, default: 0 }
+  }, { timestamps: true });
+  ```
+
+#### User Experience
+- **Floating Chat Widget**: Pinned to the bottom-right corner for easy access
+- **Message Bubbles**: Different styles for sent vs received messages
+- **Empty States**: Helpful guidance when no conversations exist
+- **Conversation List**: Shows recent conversations with message previews and timestamps
+- **Modern UI Elements**: Gradient backgrounds, animations, and shadows
+- **Error Handling**: Automatic reconnection and graceful degradation if connection is lost
+
+#### Security Considerations
+- **Authentication Required**: Only authenticated users can access chat system
+- **Private Conversations**: Messages are only visible to conversation participants
+- **Secure Connections**: All socket communications occur over secure WebSocket connections
+- **Database Protection**: Chat data is protected with the same security as medical records
+
+#### API Endpoints
+- `GET /api/chat/chats`: Retrieves all chats for the current user
+- `POST /api/chat/chat`: Creates or retrieves a chat between two users
+- `POST /api/chat/send-message`: Saves a new message to the database
+- `GET /api/chat/messages/:chatId`: Gets all messages for a specific chat
+- `GET /api/chat/online-users`: Returns list of currently online users
 
 ## Email Notification System
 
@@ -484,8 +593,12 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 TEST_USER_EMAIL=test@example.com
 TEST_USER_PASSWORD=testpassword
 
-# Socket.io Configuration
+# Socket.io Configuration (for Chat System)
 SOCKET_CORS_ORIGIN=http://localhost:5173
+SOCKET_PATH=/socket.io
+SOCKET_PING_INTERVAL=25000
+SOCKET_PING_TIMEOUT=10000
+SOCKET_RECONNECTION_ATTEMPTS=5
 ```
 
 #### Required vs Optional Variables
@@ -496,11 +609,17 @@ SOCKET_CORS_ORIGIN=http://localhost:5173
   - `JWT_SECRET`, `JWT_EXPIRY`
   - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`
 
+- **Required for chat functionality**:
+  - `SOCKET_CORS_ORIGIN`: The allowed origin for Socket.io connections
+  - `SOCKET_PATH`: The endpoint path for Socket.io (default: /socket.io)
+  - `SOCKET_PING_INTERVAL`: How often to ping clients to maintain connection
+  - `SOCKET_PING_TIMEOUT`: How long to wait for a ping response before disconnecting
+  - `SOCKET_RECONNECTION_ATTEMPTS`: Number of reconnection attempts before giving up
+
 - **Required for specific features**:
   - Google OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
   - File uploads: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
   - Payments: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
-  - Real-time notifications: `SOCKET_CORS_ORIGIN`
 
 #### Development vs Production
 

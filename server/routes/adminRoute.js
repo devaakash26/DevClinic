@@ -1384,4 +1384,83 @@ router.post("/send-consultation-reminder", authMiddleware, async (req, res) => {
     }
 });
 
+// Export appointments as Excel
+router.get("/export-appointments", authMiddleware, async (req, res) => {
+  try {
+    // Fetch all appointments
+    const appointments = await Appointment.find({})
+      .sort({ createdAt: -1 });
+
+    // Create a new Excel workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Appointments');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Patient Name', key: 'patientName', width: 20 },
+      { header: 'Patient Email', key: 'patientEmail', width: 25 },
+      { header: 'Doctor Name', key: 'doctorName', width: 20 },
+      { header: 'Doctor Specialization', key: 'doctorSpecialization', width: 20 },
+      { header: 'Date', key: 'date', width: 12 },
+      { header: 'Time', key: 'time', width: 10 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Reason', key: 'reason', width: 30 },
+      { header: 'Symptoms', key: 'symptoms', width: 30 },
+      { header: 'Medical History', key: 'medicalHistory', width: 30 },
+      { header: 'Preferred Communication', key: 'preferredCommunication', width: 15 },
+      { header: 'Emergency Contact', key: 'emergencyContact', width: 15 },
+      { header: 'Additional Notes', key: 'additionalNotes', width: 30 },
+      { header: 'Payment Status', key: 'paymentStatus', width: 15 },
+      { header: 'Payment Method', key: 'paymentMethod', width: 15 },
+      { header: 'Appointment Type', key: 'appointmentType', width: 15 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+      { header: 'Last Updated', key: 'updatedAt', width: 20 }
+    ];
+
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+
+    // Add appointment data to the worksheet
+    appointments.forEach(appointment => {
+      worksheet.addRow({
+        id: appointment._id.toString(),
+        patientName: appointment.userInfo?.name || 'N/A',
+        patientEmail: appointment.userInfo?.email || 'N/A',
+        doctorName: `Dr. ${appointment.doctorInfo?.firstname || ''} ${appointment.doctorInfo?.lastname || ''}`.trim(),
+        doctorSpecialization: appointment.doctorInfo?.specialization || 'N/A',
+        date: appointment.date,
+        time: appointment.time,
+        status: appointment.status,
+        reason: appointment.reason,
+        symptoms: appointment.symptoms,
+        medicalHistory: appointment.medicalHistory,
+        preferredCommunication: appointment.preferredCommunication,
+        emergencyContact: appointment.emergencyContact,
+        additionalNotes: appointment.additionalNotes,
+        paymentStatus: appointment.paymentStatus,
+        paymentMethod: appointment.paymentMethod,
+        appointmentType: appointment.appointmentType,
+        createdAt: appointment.createdAt ? new Date(appointment.createdAt).toLocaleString() : 'N/A',
+        updatedAt: appointment.updatedAt ? new Date(appointment.updatedAt).toLocaleString() : 'N/A'
+      });
+    });
+
+    // Set content type and headers for file download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=appointments.xlsx');
+
+    // Write the workbook to the response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting appointments:", error);
+    return res.status(500).send({
+      success: false,
+      message: "Error exporting appointments",
+      error
+    });
+  }
+});
+
 module.exports = router;

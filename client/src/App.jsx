@@ -35,6 +35,7 @@ import AdminMedicalRecords from './pages/admin/AdminMedicalRecords';
 import PatientVideoConsultations from './pages/patient/VideoConsultations';
 import DoctorVideoConsultations from './doctor/VideoConsultations';
 import VideoConsultationMonitoring from './pages/admin/VideoConsultationMonitoring';
+import ChatWidget from './components/ChatWidget';
 
 const App = () => {
   const { loading } = useSelector((state) => state.loading);
@@ -89,6 +90,7 @@ const App = () => {
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
+      <ChatWidget />
     </>
   );
 };

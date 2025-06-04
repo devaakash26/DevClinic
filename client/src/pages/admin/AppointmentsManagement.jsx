@@ -6,7 +6,8 @@ import { Table, Tag, Space, Button, Input, DatePicker, Select, Modal, message, C
 import { 
   SyncOutlined, SearchOutlined, FilterOutlined, CalendarOutlined,
   CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, 
-  UserOutlined, MedicineBoxOutlined, PieChartOutlined
+  UserOutlined, MedicineBoxOutlined, PieChartOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import Layout from '../../components/Layout';
 import moment from 'moment';
@@ -243,6 +244,43 @@ function AppointmentsManagement() {
     });
   };
 
+  // Add the export to Excel function
+  const exportToExcel = async () => {
+    try {
+      setLoading(true);
+      message.loading({ content: 'Generating Excel file...', key: 'excelExport' });
+      
+      // Make a request to download the Excel file
+      const response = await api.get('admin/export-appointments', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        responseType: 'blob' // Important for handling the binary file
+      });
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'appointments.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      message.success({ content: 'Excel file downloaded successfully!', key: 'excelExport' });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      message.error({ content: 'Failed to export appointments to Excel', key: 'excelExport' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="p-4">
@@ -354,10 +392,18 @@ function AppointmentsManagement() {
         </Card>
         
         {/* Results info */}
-        <div className="results-info mb-2">
+        <div className="results-info mb-2 flex justify-between items-center">
           <p className="text-gray-600">
             Showing {filteredAppointments.length} of {appointments.length} appointments
           </p>
+          <Button 
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={exportToExcel}
+            loading={loading}
+          >
+            Export to Excel
+          </Button>
         </div>
         
         {/* Table */}
