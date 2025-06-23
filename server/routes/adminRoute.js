@@ -183,9 +183,6 @@ router.post("/changed-doctor-account", authMiddleware, async (req, res) => {
     }
 });
 
-
-
-
 //Delete a applydoctor request
 
 router.delete("/delete-doctor-request/:doctorId", authMiddleware, async (req, res) => {
