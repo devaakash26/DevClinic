@@ -36,7 +36,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "server": "nodemon index.js",
-    "build": "echo \"Build complete\"",
+    "build": "npm install",
     "heroku-postbuild": "npm install"
   },
   "devDependencies": {
