@@ -6,8 +6,9 @@ const ALLOWED_ORIGINS = [
   "https://developer-clinic.vercel.app",
   "https://developer-clinic-devaakash26s-projects.vercel.app",
   "https://developer-clinic-git-main-devaakash26s-projects.vercel.app",
+  "https://devclinic-1.onrender.com",
   // Allow all Vercel preview deployments
-  /https:\/\/developer-clinic.*\.vercel\.app$/,
+  // /https:\/\/developer-clinic.*\.vercel\.app$/,
   // Server origin
   "https://developer-clinic-server.vercel.app"
 ];
