@@ -13,17 +13,15 @@ const dbConnect = async () => {
 
   // Optimized connection options for serverless
   const opts = {
-    connectTimeoutMS: 5000,
-    socketTimeoutMS: 5000,
-    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 3000, // Reduced timeout
+    socketTimeoutMS: 3000, // Reduced timeout
+    serverSelectionTimeoutMS: 3000, // Reduced timeout
     bufferCommands: false,
     maxPoolSize: 1,
     minPoolSize: 0,
     autoIndex: false,
     retryWrites: true,
-    // Using the correct keepAlive options for MongoDB
-    heartbeatFrequencyMS: 30000,
-    family: 4 // Use IPv4, skip IPv6
+    family: 4
   };
 
   try {
@@ -39,25 +37,24 @@ const dbConnect = async () => {
     
     // Add timeout to connection attempt
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Connection timeout')), 5000);
+      setTimeout(() => reject(new Error('Connection timeout')), 3000);
     });
     
     // Race between connection and timeout
     cachedConnection = await Promise.race([connectPromise, timeoutPromise]);
     console.log("MongoDB connected successfully");
-    
-    // Handle connection close on serverless instance shutdown
-    const cleanup = async () => {
-      if (cachedConnection) {
-        console.log("Closing MongoDB connection due to shutdown");
-        await mongoose.connection.close();
-        cachedConnection = null;
-      }
-    };
 
-    // Add cleanup handlers
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
+    // Add connection error handler
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+      cachedConnection = null;
+    });
+
+    // Add disconnection handler
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+      cachedConnection = null;
+    });
     
     return cachedConnection;
   } catch (error) {

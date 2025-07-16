@@ -6,7 +6,7 @@
       "src": "index.js",
       "use": "@vercel/node",
       "config": {
-        "maxDuration": 60,
+        "maxDuration": 10,
         "memory": 1024,
         "maxLambdaSize": "50mb"
       }
@@ -31,7 +31,8 @@
         "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
         "Access-Control-Allow-Credentials": "true"
-      }
+      },
+      "continue": true
     },
     {
       "src": "/favicon.ico",
@@ -49,6 +50,11 @@
       }
     }
   ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  },
   "env": {
     "NODE_ENV": "production"
   }

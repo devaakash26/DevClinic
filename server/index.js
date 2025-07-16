@@ -17,24 +17,33 @@ app.use(cors(corsOptions));
 // Handle preflight requests
 app.options('*', cors(corsOptions));
 
-// Apply remaining middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+// Apply remaining middleware with optimized settings
+app.use(express.json({ limit: '1mb' })); // Reduced limit
+app.use(express.urlencoded({ extended: true, limit: '1mb' })); // Reduced limit
+app.use(bodyParser.json({ limit: '1mb' })); // Reduced limit
+app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' })); // Reduced limit
 
 // Handle favicon.ico requests
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
-// Global middleware to ensure CORS headers are set on all responses
+// Global middleware to ensure CORS headers and handle timeouts
 app.use((req, res, next) => {
   // Add CORS headers to all responses
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Set response timeout
+  res.setTimeout(8000, () => {
+    console.error('Request timeout');
+    res.status(504).json({
+      error: 'Gateway Timeout',
+      message: 'Request took too long to process'
+    });
+  });
   
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -103,8 +112,19 @@ const withDb = (handler) => [
 
       // Import DB connect here to avoid initial cold start penalty
       const dbConnect = require("./connection/dbConnect");
+      
+      // Set a timeout for the database connection
+      const timeout = setTimeout(() => {
+        res.status(504).json({
+          error: 'Database Connection Timeout',
+          message: 'Database connection took too long'
+        });
+      }, 5000);
+
       // Connect to database on demand
       const connection = await dbConnect();
+      clearTimeout(timeout);
+
       if (!connection) {
         return res.status(503).json({
           error: "Database connection failed",
