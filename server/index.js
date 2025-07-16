@@ -13,7 +13,8 @@ const app = express();
 
 // Apply CORS middleware before any other middleware
 app.use(cors(corsOptions));
-// Explicit preflight handler
+
+// Handle preflight requests
 app.options('*', cors(corsOptions));
 
 // Apply remaining middleware
@@ -24,13 +25,16 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Handle favicon.ico requests
 app.get('/favicon.ico', (req, res) => {
-  res.status(204).end(); // No content response for favicon
+  res.status(204).end();
 });
 
 // Global middleware to ensure CORS headers are set on all responses
 app.use((req, res, next) => {
-  // Don't set specific origin here as it overrides the cors middleware
-  // The cors middleware handles this properly using the corsOptions
+  // Add CORS headers to all responses
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle preflight
   if (req.method === 'OPTIONS') {

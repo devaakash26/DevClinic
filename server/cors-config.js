@@ -30,12 +30,12 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log("Blocked by CORS: ", origin);
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
-  methods: "GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS",
-  allowedHeaders: "X-Requested-With, Content-Type, Accept, Authorization",
-  exposedHeaders: "Content-Length, X-Requested-With",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  exposedHeaders: ["Content-Length", "X-Requested-With"],
   credentials: true,
   optionsSuccessStatus: 204,
   maxAge: 86400,

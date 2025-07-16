@@ -98,9 +98,22 @@ function Login() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Origin': window.location.origin
                 },
+                credentials: 'include',
                 body: JSON.stringify({ token: response.credential }),
             });
+
+            if (!serverResponse.ok) {
+                const errorData = await serverResponse.json().catch(() => ({}));
+                console.error('Server error:', {
+                    status: serverResponse.status,
+                    statusText: serverResponse.statusText,
+                    data: errorData
+                });
+                throw new Error(errorData.message || 'Failed to sign in with Google');
+            }
 
             const data = await serverResponse.json();
             console.log('Server response:', data);
@@ -114,7 +127,7 @@ function Login() {
             }
         } catch (error) {
             console.error('Google sign-in error:', error);
-            toast.error('Something went wrong with Google sign-in. Please try again.');
+            toast.error(error.message || 'Something went wrong with Google sign-in. Please try again.');
         } finally {
             setIsGoogleLoading(false);
             dispatch(hideLoading());
