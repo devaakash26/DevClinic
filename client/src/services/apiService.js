@@ -1,6 +1,6 @@
 // API service for centralizing API calls and URL configuration
-const API_BASE_URL = import.meta.env.API_URL || 'http://localhost:4000/api';
-const SERVER_URL = import.meta.env.SERVER_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://developer-clinic-server.vercel.app/api';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://developer-clinic-server.vercel.app';
 
 // Helper function to get the full API URL
 export const getApiUrl = (endpoint) => {
@@ -44,7 +44,8 @@ export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
         headers: {
           ...options.headers,
           'Content-Type': 'application/json',
-        }
+        },
+        credentials: 'include' // Add this to handle cookies if needed
       };
       
       const response = await fetch(url, fetchOptions);
@@ -52,6 +53,13 @@ export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
       
       // Handle various error status codes
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        });
+
         if (response.status === 404) {
           console.warn(`Received 404 for ${url}, retrying...`);
           retries++;
@@ -66,7 +74,7 @@ export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
           continue;
         }
         
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
       }
       
       return response;

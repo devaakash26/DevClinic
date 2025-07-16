@@ -7,22 +7,24 @@ const ALLOWED_ORIGINS = [
   "https://developer-clinic-devaakash26s-projects.vercel.app",
   "https://developer-clinic-git-main-devaakash26s-projects.vercel.app",
   "https://devclinic-1.onrender.com",
-  // Allow all Vercel preview deployments
-  // /https:\/\/developer-clinic.*\.vercel\.app$/,
   // Server origin
   "https://developer-clinic-server.vercel.app"
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow curl/postman/etc
+    // Allow requests with no origin (like mobile apps, curl, etc)
+    if (!origin) {
+      return callback(null, true);
+    }
 
-    const isAllowed = ALLOWED_ORIGINS.some((allowedOrigin) => {
-      if (allowedOrigin instanceof RegExp) {
-        return allowedOrigin.test(origin);
-      }
-      return allowedOrigin === origin;
-    });
+    // Allow all Vercel preview deployments
+    if (origin.match(/https:\/\/developer-clinic.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+
+    // Check against explicit allowed origins
+    const isAllowed = ALLOWED_ORIGINS.includes(origin);
 
     if (isAllowed) {
       callback(null, true);
@@ -33,6 +35,7 @@ const corsOptions = {
   },
   methods: "GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS",
   allowedHeaders: "X-Requested-With, Content-Type, Accept, Authorization",
+  exposedHeaders: "Content-Length, X-Requested-With",
   credentials: true,
   optionsSuccessStatus: 204,
   maxAge: 86400,
