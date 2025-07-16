@@ -1,4 +1,7 @@
 {
+  "name": "developer-clinic-server",
+  "version": "1.0.0",
+  "private": true,
   "dependencies": {
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
@@ -19,25 +22,13 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^6.10.1",
     "path": "^0.12.7",
-    "paytmchecksum": "^1.5.1",
     "razorpay": "^2.9.6",
-    "redis": "^4.7.0",
-    "redis-server": "^1.2.2",
-    "serverless-http": "^3.2.0",
-    "sharp": "^0.33.4",
-    "simple-peer": "^9.11.1",
-    "simple-peer-server": "^0.0.11",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "socket.io-redis": "^5.4.0",
-    "uuid": "^10.0.0"
+    "socket.io": "^4.8.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
     "start": "node index.js",
-    "server": "nodemon index.js",
-    "build": "npm install",
-    "heroku-postbuild": "npm install"
+    "build": "echo 'No build step needed'"
   },
   "devDependencies": {
     "nodemon": "^3.1.2"
