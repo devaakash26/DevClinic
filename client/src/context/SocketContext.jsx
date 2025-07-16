@@ -27,18 +27,26 @@ export const SocketProvider = ({ children }) => {
     
     // Initialize socket connection only once with reconnection options
     useEffect(() => {
-        const newSocket = io(SOCKET_URL, {
+        const socketUrl = SOCKET_URL;
+        console.log('Environment:', import.meta.env.MODE);
+        console.log('Socket URL:', socketUrl);
+        console.log('API URL:', import.meta.env.VITE_API_URL);
+        console.log('Server URL:', import.meta.env.VITE_SERVER_URL);
+
+        const newSocket = io(socketUrl, {
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             timeout: 20000,
-            transports: ['websocket', 'polling'],
-            path: '/socket.io/',
-            withCredentials: false,
+            transports: ['websocket'],
+            path: '/socket.io',
+            withCredentials: true,
             forceNew: true,
             autoConnect: true,
             reconnection: true,
-            extraHeaders: {},
+            extraHeaders: {
+                'Access-Control-Allow-Origin': '*'
+            },
             upgrade: true
         });
         
@@ -48,15 +56,24 @@ export const SocketProvider = ({ children }) => {
                 message: err.message,
                 description: err.description,
                 type: err.type,
-                stack: err.stack
+                stack: err.stack,
+                url: socketUrl
             });
+            
+            // Show error toast after multiple attempts
+            if (connectionAttemptsRef.current >= 2) {
+                toast.error("Unable to connect to notification server. Please check your connection.");
+            }
         });
         
         setSocket(newSocket);
         
         return () => {
             console.log("Cleaning up socket connection");
-            if (newSocket) newSocket.disconnect();
+            if (newSocket) {
+                newSocket.disconnect();
+                newSocket.close();
+            }
         };
     }, []);
     
