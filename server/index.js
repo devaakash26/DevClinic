@@ -22,6 +22,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+// Handle favicon.ico requests
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No content response for favicon
+});
+
 // Global middleware to ensure CORS headers are set on all responses
 app.use((req, res, next) => {
   // Don't set specific origin here as it overrides the cors middleware
@@ -49,7 +54,8 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'Server is healthy',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
   });
 });
 
@@ -86,22 +92,29 @@ app.all('/api/request-debug', (req, res) => {
 const withDb = (handler) => [
   async (req, res, next) => {
     try {
+      // Skip DB connection for OPTIONS requests
+      if (req.method === 'OPTIONS') {
+        return next();
+      }
+
       // Import DB connect here to avoid initial cold start penalty
       const dbConnect = require("./connection/dbConnect");
       // Connect to database on demand
       const connection = await dbConnect();
       if (!connection) {
-        return res.status(500).json({
+        return res.status(503).json({
           error: "Database connection failed",
-          message: "Could not establish database connection"
+          message: "Could not establish database connection",
+          timestamp: new Date().toISOString()
         });
       }
       next();
     } catch (err) {
       console.error("DB Connection Error:", err);
-      res.status(500).json({
+      res.status(503).json({
         error: "Database connection failed",
-        message: err.message
+        message: err.message,
+        timestamp: new Date().toISOString()
       });
     }
   },

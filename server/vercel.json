@@ -1,30 +1,35 @@
 {
-    "installCommand": "npm install --legacy-peer-deps",
-    "version": 2,
-    "builds": [
-      {
-        "src": "index.js",
-        "use": "@vercel/node",
-        "config": {
-          "maxDuration": 60,
-          "memory": 1024,
-          "maxLambdaSize": "50mb"
-        }
+  "installCommand": "npm install --legacy-peer-deps",
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 60,
+        "memory": 1024,
+        "maxLambdaSize": "50mb"
       }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "index.js",
-        "headers": {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
-      }
-    ],
-    "env": {
-      "NODE_ENV": "production"
     }
+  ],
+  "routes": [
+    {
+      "src": "/favicon.ico",
+      "dest": "index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Cache-Control": "s-maxage=0"
+      }
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
   
