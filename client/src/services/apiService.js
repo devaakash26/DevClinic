@@ -1,6 +1,6 @@
 // API service for centralizing API calls and URL configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.API_URL || 'http://localhost:4000/api';
+const SERVER_URL = import.meta.env.SERVER_URL || 'http://localhost:4000';
 
 // Helper function to get the full API URL
 export const getApiUrl = (endpoint) => {
@@ -21,22 +21,52 @@ export const getApiUrl = (endpoint) => {
 // Socket URL with explicit configuration to avoid path issues
 export const SOCKET_URL = SERVER_URL;
 
-// Create a custom fetch with retry logic
+// Create a custom fetch with retry logic and timeout
 export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
   let retries = 0;
   let lastError;
 
+  // Default timeout of 30 seconds
+  const timeout = options.timeout || 30000;
+  
   while (retries < maxRetries) {
     try {
       console.log(`Fetching ${url} (Attempt ${retries + 1}/${maxRetries})`);
-      const response = await fetch(url, options);
       
-      // Handle 404 errors by retrying
-      if (response.status === 404) {
-        console.warn(`Received 404 for ${url}, retrying...`);
-        retries++;
-        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-        continue;
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      // Add signal to options
+      const fetchOptions = {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          ...options.headers,
+          'Content-Type': 'application/json',
+        }
+      };
+      
+      const response = await fetch(url, fetchOptions);
+      clearTimeout(timeoutId);
+      
+      // Handle various error status codes
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Received 404 for ${url}, retrying...`);
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+          continue;
+        }
+        
+        if (response.status === 504) {
+          console.warn(`Gateway timeout for ${url}, retrying...`);
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, 2000 * retries));
+          continue;
+        }
+        
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       return response;
@@ -45,9 +75,14 @@ export const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
       lastError = error;
       retries++;
       
+      if (error.name === 'AbortError') {
+        console.warn(`Request timeout for ${url}`);
+      }
+      
       if (retries < maxRetries) {
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        // Exponential backoff with jitter
+        const backoff = Math.min(1000 * Math.pow(2, retries) + Math.random() * 1000, 10000);
+        await new Promise(resolve => setTimeout(resolve, backoff));
       }
     }
   }

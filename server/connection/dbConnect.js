@@ -11,14 +11,19 @@ const dbConnect = async () => {
     return cachedConnection;
   }
 
-  // Shorter connection timeout for serverless environment
+  // Optimized connection options for serverless
   const opts = {
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 10000,
-    serverSelectionTimeoutMS: 10000,
-    bufferCommands: true,
-    maxPoolSize: 5,
-    minPoolSize: 1
+    connectTimeoutMS: 5000,
+    socketTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 5000,
+    bufferCommands: false,
+    maxPoolSize: 1,
+    minPoolSize: 0,
+    autoIndex: false,
+    retryWrites: true,
+    // Using the correct keepAlive options for MongoDB
+    heartbeatFrequencyMS: 30000,
+    family: 4 // Use IPv4, skip IPv6
   };
 
   try {
@@ -28,16 +33,25 @@ const dbConnect = async () => {
       return null;
     }
 
-    // Connect to MongoDB
+    // Connect to MongoDB with timeout
     console.log("Connecting to MongoDB...");
-    cachedConnection = await mongoose.connect(process.env.URI, opts);
+    const connectPromise = mongoose.connect(process.env.URI, opts);
+    
+    // Add timeout to connection attempt
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 5000);
+    });
+    
+    // Race between connection and timeout
+    cachedConnection = await Promise.race([connectPromise, timeoutPromise]);
     console.log("MongoDB connected successfully");
     
     // Handle connection close on serverless instance shutdown
-    const cleanup = () => {
+    const cleanup = async () => {
       if (cachedConnection) {
         console.log("Closing MongoDB connection due to shutdown");
-        mongoose.connection.close();
+        await mongoose.connection.close();
+        cachedConnection = null;
       }
     };
 
@@ -48,7 +62,7 @@ const dbConnect = async () => {
     return cachedConnection;
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
-    // Don't throw error in serverless to prevent function failure
+    cachedConnection = null;
     return null;
   }
 };
